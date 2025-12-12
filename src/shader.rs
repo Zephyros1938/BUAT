@@ -1,9 +1,8 @@
-use gl::types::{GLint, GLsizei, GLuint};
+use gl::types::{GLint, GLuint};
 use nalgebra_glm as glm;
 use std::ffi::CString;
 
 const ERROR_ON_NO_UNIFORM_FOUND: bool = false;
-
 pub struct Shader {
     pub program: GLuint,
 }

@@ -1,90 +1,32 @@
 #![allow(static_mut_refs)]
 extern crate glfw;
-
-use gl::types::{GLint, GLuint};
-use glfw::{
-    Action, Context, Key,
-    ffi::{glfwDestroyWindow, glfwSetWindowMonitor},
-};
+use glfw::{Action, Context, Key};
 use nalgebra_glm as glm;
-use std::ffi::CString;
 
 mod camera;
 mod mousehandler;
 mod shader;
-use crate::{camera::Camera3d, mousehandler::MouseHandler, shader::VertexArrayObject};
-
-// =============================================================
-// ============= Helper Functions (Uniforms & Shaders) =========
-// =============================================================
-
-fn get_uniform_location(program: GLuint, name: &str) -> i32 {
-    let c_name = CString::new(name)
-        .map_err(|_| format!("Failed to create CString for uniform: {}", name))
-        .unwrap();
-
-    unsafe { gl::GetUniformLocation(program, c_name.as_ptr()) }
-}
-
-fn set_mat4_uniform(program: GLuint, name: &str, m: &glm::Mat4) -> Result<(), String> {
-    let location = get_uniform_location(program, name);
-
-    if location == -1 {
-        return Ok(());
-    }
-
-    unsafe { gl::UniformMatrix4fv(location, 1, gl::FALSE, m.as_ptr()) };
-    Ok(())
-}
-
-fn set_vec3_uniform(program: GLuint, name: &str, v: &glm::Vec3) -> Result<(), String> {
-    let location = get_uniform_location(program, name);
-
-    if location == -1 {
-        return Ok(());
-    }
-
-    unsafe {
-        gl::Uniform3fv(location, 1, v.as_ptr());
-    }
-    Ok(())
-}
+mod windowing;
+use crate::{
+    camera::Camera3d,
+    mousehandler::MouseHandler,
+    shader::VertexArrayObject,
+    windowing::{GameWindow, GameWindowHints},
+};
 
 // =============================================================
 // ======================= Main Program ========================
 // =============================================================
 
-const KEY_COUNT: usize = 1024;
-static mut KEY_STATES: [bool; KEY_COUNT] = [false; KEY_COUNT];
-static mut FULLSCREEN: bool = false;
-
-static mut POS_WINDOWED: (i32, i32) = (-1, -1);
-static mut SIZE_WINDOWED: (i32, i32) = (-1, -1);
-
 fn main() {
-    // ------------------------ GLFW Init ------------------------
-    glfw::init_hint(glfw::InitHint::Platform(glfw::Platform::Wayland));
-    let mut glfw = glfw::init(glfw::fail_on_errors).unwrap();
-    glfw.window_hint(glfw::WindowHint::ContextVersion(3, 3));
-    glfw.window_hint(glfw::WindowHint::OpenGlProfile(
-        glfw::OpenGlProfileHint::Core,
-    ));
-    glfw.window_hint(glfw::WindowHint::OpenGlForwardCompat(true));
-
-    let width = 1080.0f32;
-    let height = 720.0f32;
-
-    let (mut window, events) = glfw
-        .create_window(
-            width as u32,
-            height as u32,
-            "ZephyrosOpenGLGame",
-            glfw::WindowMode::Windowed,
-        )
-        .expect("Failed to create GLFW window");
-
-    window.make_current();
-    window.set_all_polling(true);
+    let mut gameWindow = GameWindow::new(GameWindowHints {
+        gl_context: (3, 3),
+        profile: glfw::OpenGlProfileHint::Core,
+        title: "BUAT",
+        fullscreen: false,
+        size: (1080, 720),
+    })
+    .unwrap();
 
     // -------------------- Camera Initialization --------------------
     let mut camera = Camera3d::new(
@@ -96,14 +38,15 @@ fn main() {
         1.5,
         45.0,
         true,
-        width / height,
+        gameWindow.win.get_size().0 as f32 / gameWindow.win.get_size().1 as f32,
         0.1,
         100.0,
     );
 
     // ------------------------- Load GL -------------------------
     gl::load_with(|s| {
-        window
+        gameWindow
+            .win
             .get_proc_address(s)
             .map(|p| p as *const _)
             .unwrap_or(std::ptr::null())
@@ -197,83 +140,37 @@ fn main() {
     // ========================= Main Loop =========================
     // =============================================================
 
-    let mut last_frame: f32 = 0.0;
-    let mut delta_time: f32 = 0.0;
+    let mut mousehandler = MouseHandler::new(0., 0.);
 
-    let (width, height) = window.get_size();
-    unsafe { gl::Viewport(0, 0, width, height) };
-    camera.aspect_ratio = width as f32 / height as f32;
-    let mut mousehandler = MouseHandler::new(width as f32, height as f32);
+    gameWindow.win.set_cursor_mode(glfw::CursorMode::Disabled);
 
-    window.set_cursor_mode(glfw::CursorMode::Disabled);
-
-    while !window.should_close() {
+    while !gameWindow.win.should_close() {
         // ----- DELTA TIME -----
-        let current_time = glfw.get_time() as f32;
-        delta_time = current_time - last_frame;
-        last_frame = current_time;
+        let delta_time = gameWindow.tick();
 
-        glfw.poll_events();
+        gameWindow.glfw.poll_events();
 
         // ------------------------ Input -------------------------
-        for (_, event) in glfw::flush_messages(&events) {
+        for (_, event) in glfw::flush_messages(&gameWindow.ev) {
             match event {
                 glfw::WindowEvent::Key(key, _, action, _) => unsafe {
-                    if (key as usize) < KEY_COUNT {
+                    if (key as usize) < windowing::KEY_COUNT {
                         match action {
-                            Action::Press => KEY_STATES[key as usize] = true,
-                            Action::Release => KEY_STATES[key as usize] = false,
+                            Action::Press => gameWindow.key_states[key as usize] = true,
+                            Action::Release => gameWindow.key_states[key as usize] = false,
                             _ => {}
                         }
                     }
 
                     if key == Key::Escape && action == Action::Press {
-                        window.set_should_close(true);
+                        gameWindow.win.set_should_close(true);
                     }
                     if key == Key::LeftAlt && action == Action::Press {
                         mousehandler.locked = !mousehandler.locked;
                         if mousehandler.locked {
-                            window.set_cursor_mode(glfw::CursorMode::Disabled); // Captures and hides cursor
+                            gameWindow.win.set_cursor_mode(glfw::CursorMode::Disabled); // Captures and hides cursor
                         } else {
-                            window.set_cursor_mode(glfw::CursorMode::Normal); // Captures and hides cursor
-                        }
-                    }
-                    if key == Key::F11 && action == Action::Press {
-                        unsafe {
-                            FULLSCREEN = !FULLSCREEN;
-                            if FULLSCREEN {
-                                // Save current windowed position and size
-                                POS_WINDOWED = window.get_pos();
-                                SIZE_WINDOWED =
-                                    (window.get_size().0 as i32, window.get_size().1 as i32);
-
-                                // Get primary monitor
-                                glfw.with_primary_monitor(|_, monitor| {
-                                    if let Some(monitor) = monitor {
-                                        let video_mode = monitor
-                                            .get_video_mode()
-                                            .expect("Failed to get video mode");
-                                        window.set_monitor(
-                                            glfw::WindowMode::FullScreen(monitor),
-                                            0,
-                                            0,
-                                            video_mode.width,
-                                            video_mode.height,
-                                            Some(video_mode.refresh_rate),
-                                        );
-                                    }
-                                });
-                            } else {
-                                // Restore windowed mode
-                                window.set_monitor(
-                                    glfw::WindowMode::Windowed,
-                                    POS_WINDOWED.0,
-                                    POS_WINDOWED.1,
-                                    SIZE_WINDOWED.0 as u32,
-                                    SIZE_WINDOWED.1 as u32,
-                                    None,
-                                );
-                            }
+                            gameWindow.win.set_cursor_mode(glfw::CursorMode::Normal); // Captures and hides cursor
                         }
                     }
                 },
@@ -297,49 +194,49 @@ fn main() {
         }
 
         // Poll KEY_STATES for smooth movement (dont put in the thingy above)
-        unsafe {
-            let mut direction = glm::vec3(0.0, 0.0, 0.0);
+        
+        let mut direction = glm::vec3(0.0, 0.0, 0.0);
+        let key_states = gameWindow.key_states;
 
-            if KEY_STATES[Key::W as usize] {
-                direction += camera.front;
-            }
-            if KEY_STATES[Key::S as usize] {
-                direction -= camera.front;
-            }
-            if KEY_STATES[Key::A as usize] {
-                direction -= camera.right;
-            }
-            if KEY_STATES[Key::D as usize] {
-                direction += camera.right;
-            }
-            if KEY_STATES[Key::Space as usize] {
-                direction += camera.up;
-            }
-            if KEY_STATES[Key::LeftShift as usize] {
-                direction -= camera.up;
-            }
-            if KEY_STATES[Key::Up as usize] {
-                camera.process_mouse(0.0, 1.0 * delta_time * 50.0 / camera.mouse_sensitivity * 2.);
-            }
-            if KEY_STATES[Key::Down as usize] {
-                camera.process_mouse(
-                    0.0,
-                    -1.0 * delta_time * 50.0 / camera.mouse_sensitivity * 2.,
-                );
-            }
-            if KEY_STATES[Key::Left as usize] {
-                camera.process_mouse(
-                    -1.0 * delta_time * 50.0 / camera.mouse_sensitivity * 2.,
-                    0.0,
-                );
-            }
-            if KEY_STATES[Key::Right as usize] {
-                camera.process_mouse(1.0 * delta_time * 50.0 / camera.mouse_sensitivity * 2., 0.0);
-            }
+        if key_states[Key::W as usize] {
+            direction += camera.front;
+        }
+        if key_states[Key::S as usize] {
+            direction -= camera.front;
+        }
+        if key_states[Key::A as usize] {
+            direction -= camera.right;
+        }
+        if key_states[Key::D as usize] {
+            direction += camera.right;
+        }
+        if key_states[Key::Space as usize] {
+            direction += camera.up;
+        }
+        if key_states[Key::LeftShift as usize] {
+            direction -= camera.up;
+        }
+        if key_states[Key::Up as usize] {
+            camera.process_mouse(0.0, 1.0 * delta_time * 50.0 / camera.mouse_sensitivity * 2.);
+        }
+        if key_states[Key::Down as usize] {
+            camera.process_mouse(
+                0.0,
+                -1.0 * delta_time * 50.0 / camera.mouse_sensitivity * 2.,
+            );
+        }
+        if key_states[Key::Left as usize] {
+            camera.process_mouse(
+                -1.0 * delta_time * 50.0 / camera.mouse_sensitivity * 2.,
+                0.0,
+            );
+        }
+        if key_states[Key::Right as usize] {
+            camera.process_mouse(1.0 * delta_time * 50.0 / camera.mouse_sensitivity * 2., 0.0);
+        }
 
-            if glm::length(&direction) > 0.0 {
-                camera.position += direction * camera.move_speed * delta_time;
-            }
+        if glm::length(&direction) > 0.0 {
+            camera.position += direction * camera.move_speed * delta_time;
         }
 
         // ----------------------- Rendering -----------------------
@@ -359,6 +256,6 @@ fn main() {
             gl::DrawArrays(gl::TRIANGLES, 0, 3);
         }
 
-        window.swap_buffers();
+        gameWindow.win.swap_buffers();
     }
 }

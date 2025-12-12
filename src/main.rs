@@ -2,13 +2,17 @@
 extern crate glfw;
 
 use gl::types::{GLint, GLuint};
-use glfw::{Action, Context, Key, ffi::glfwSetWindowMonitor};
+use glfw::{
+    Action, Context, Key,
+    ffi::{glfwDestroyWindow, glfwSetWindowMonitor},
+};
 use nalgebra_glm as glm;
 use std::ffi::CString;
 
 mod camera;
 mod mousehandler;
-use crate::{camera::Camera3d, mousehandler::MouseHandler};
+mod shader;
+use crate::{camera::Camera3d, mousehandler::MouseHandler, shader::VertexArrayObject};
 
 // =============================================================
 // ============= Helper Functions (Uniforms & Shaders) =========
@@ -44,39 +48,6 @@ fn set_vec3_uniform(program: GLuint, name: &str, v: &glm::Vec3) -> Result<(), St
         gl::Uniform3fv(location, 1, v.as_ptr());
     }
     Ok(())
-}
-
-fn compile_shader(source: &str, kind: GLuint) -> GLuint {
-    let id = unsafe { gl::CreateShader(kind) };
-    let c_source = CString::new(source.as_bytes()).unwrap();
-
-    unsafe {
-        gl::ShaderSource(id, 1, &c_source.as_ptr(), std::ptr::null());
-        gl::CompileShader(id);
-    }
-
-    let mut success: GLint = 1;
-    unsafe { gl::GetShaderiv(id, gl::COMPILE_STATUS, &mut success) };
-
-    if success == 0 {
-        let mut len = 0;
-        unsafe { gl::GetShaderiv(id, gl::INFO_LOG_LENGTH, &mut len) };
-
-        let error_buffer = vec![0u8; (len as usize).saturating_sub(1)];
-        let error_log = CString::new(error_buffer).unwrap();
-
-        unsafe {
-            gl::GetShaderInfoLog(id, len, std::ptr::null_mut(), error_log.as_ptr() as *mut _);
-        }
-
-        panic!(
-            "Shader compilation failed (type {}): {}",
-            kind,
-            error_log.to_string_lossy()
-        );
-    }
-
-    id
 }
 
 // =============================================================
@@ -119,15 +90,15 @@ fn main() {
     let mut camera = Camera3d::new(
         glm::vec3(0., 0., 3.),
         glm::vec3(0., 1., 0.),
-        -0.0,                 
-        0.0,                 
-        0.15,               
-        1.5,              
-        45.0,               
-        true,                
-        width / height,      
-        0.1,                 
-        100.0,             
+        -0.0,
+        0.0,
+        0.15,
+        1.5,
+        45.0,
+        true,
+        width / height,
+        0.1,
+        100.0,
     );
 
     // ------------------------- Load GL -------------------------
@@ -168,20 +139,7 @@ fn main() {
         }
     "#;
 
-    let vert_shader = compile_shader(vertex_shader_src, gl::VERTEX_SHADER);
-    let frag_shader = compile_shader(fragment_shader_src, gl::FRAGMENT_SHADER);
-
-    let shader_program = unsafe {
-        let program = gl::CreateProgram();
-        gl::AttachShader(program, vert_shader);
-        gl::AttachShader(program, frag_shader);
-        gl::LinkProgram(program);
-
-        gl::DeleteShader(vert_shader);
-        gl::DeleteShader(frag_shader);
-
-        program
-    };
+    let shader = shader::Shader::new(vertex_shader_src, fragment_shader_src);
 
     // -------------------------- Geometry -----------------------
     let vertices: [f32; 9] = [
@@ -196,14 +154,15 @@ fn main() {
         0.0, 0.0, 1.0, // blue
     ];
 
-    let (mut vao, mut vbo_pos, mut vbo_color) = (0, 0, 0);
+    let (mut vbo_pos, mut vbo_color) = (0, 0);
+    let mut vao = VertexArrayObject::new();
 
     unsafe {
-        gl::GenVertexArrays(1, &mut vao);
+        gl::GenVertexArrays(1, &mut vao.id);
         gl::GenBuffers(1, &mut vbo_pos);
         gl::GenBuffers(1, &mut vbo_color);
 
-        gl::BindVertexArray(vao);
+        gl::BindVertexArray(vao.id);
 
         // Position buffer
         gl::BindBuffer(gl::ARRAY_BUFFER, vbo_pos);
@@ -231,6 +190,9 @@ fn main() {
         gl::BindVertexArray(0);
     }
 
+    vao.bind();
+    vao.unbind();
+
     // =============================================================
     // ========================= Main Loop =========================
     // =============================================================
@@ -243,8 +205,7 @@ fn main() {
     camera.aspect_ratio = width as f32 / height as f32;
     let mut mousehandler = MouseHandler::new(width as f32, height as f32);
 
-    window.set_cursor_mode(glfw::CursorMode::Disabled); 
-
+    window.set_cursor_mode(glfw::CursorMode::Disabled);
 
     while !window.should_close() {
         // ----- DELTA TIME -----
@@ -386,15 +347,15 @@ fn main() {
             gl::ClearColor(0.2, 0.3, 0.3, 1.0);
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
 
-            gl::UseProgram(shader_program);
+            shader.use_program();
 
             let view = camera.get_view_matrix();
             let projection = camera.get_projection_matrix();
 
-            set_mat4_uniform(shader_program, "view", &view).unwrap();
-            set_mat4_uniform(shader_program, "projection", &projection).unwrap();
+            shader.set_mat4("view", &view).unwrap();
+            shader.set_mat4("projection", &projection).unwrap();
 
-            gl::BindVertexArray(vao);
+            vao.bind();
             gl::DrawArrays(gl::TRIANGLES, 0, 3);
         }
 

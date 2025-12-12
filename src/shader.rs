@@ -1,13 +1,18 @@
 use gl::types::{GLint, GLuint};
 use nalgebra_glm as glm;
 use std::ffi::CString;
-
+use log::{debug, error, info, trace, warn};
+use log4rs;
 const ERROR_ON_NO_UNIFORM_FOUND: bool = false;
 pub struct Shader {
     pub program: GLuint,
 }
 
 fn compile_shader(source: &str, kind: GLuint) -> GLuint {
+    debug!("Compiling {} shader", match kind {
+        gl::VERTEX_SHADER => "VERTEX",
+        _ => "UNKNOWN"
+    });
     let id = unsafe { gl::CreateShader(kind) };
     let c_source = CString::new(source.as_bytes()).unwrap();
 
@@ -37,6 +42,8 @@ fn compile_shader(source: &str, kind: GLuint) -> GLuint {
         );
     }
 
+    debug!("Created shader #{}", id);
+
     id
 }
 fn get_uniform_location(program: GLuint, name: &str) -> i32 {
@@ -46,6 +53,8 @@ fn get_uniform_location(program: GLuint, name: &str) -> i32 {
 
     unsafe { gl::GetUniformLocation(program, c_name.as_ptr()) }
 }
+
+
 
 impl Shader {
     pub fn new(vertex_src: &str, fragment_src: &str) -> Self {
@@ -63,6 +72,7 @@ impl Shader {
 
             program
         };
+        debug!("Created shader program #{}", program);
 
         Shader { program }
     }
@@ -124,6 +134,7 @@ impl VertexArrayObject {
         unsafe {
             gl::GenVertexArrays(1, &mut id);
         }
+        debug!("Created VAO #{}", id);
         VertexArrayObject { id }
     }
 

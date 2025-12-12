@@ -1,0 +1,34 @@
+# log4rs.yaml
+
+# Set to 0 to disable automatic configuration reloading (simplest)
+refresh_rate: 0 seconds
+
+# --- 1. APPENDERS (Where logs go) ---
+appenders:
+
+  # 1.1. Console Appender (for immediate terminal feedback)
+  stdout:
+    kind: console
+    encoder:
+      kind: pattern
+      # Simple pattern: Date | Level | Module Path | Message
+      pattern: "{d(%H:%M:%S.%3f)} {h({l})} {t} - {m}{n}"
+
+  # 1.2. Simple File Appender (no rolling/archiving)
+  logfile:
+    kind: file
+    path: "app.log" # All logs go into this file
+    encoder:
+      kind: pattern
+      pattern: "{d(%Y-%m-%d %H:%M:%S.%3f)} {l} {t} - {m}{n}"
+
+
+# --- 2. ROOT LOGGER (The default for all logs) ---
+root:
+  # Set the overall default level to DEBUG. 
+  # This ensures 'info!', 'warn!', 'error!', and 'debug!' messages all get captured.
+  level: debug
+  # Send logs to both the console and the file
+  appenders:
+    - stdout
+    - logfile

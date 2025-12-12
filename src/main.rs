@@ -13,16 +13,23 @@ use crate::{
     shader::VertexArrayObject,
     windowing::{GameWindow, GameWindowHints},
 };
+use log::{debug, error, info, trace, warn};
+use log4rs;
 
 // =============================================================
 // ======================= Main Program ========================
 // =============================================================
 
 fn main() {
+    log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
+    debug!(
+        "{}",
+        format!("Launched BUAT v{}", env!("CARGO_PKG_VERSION"))
+    );
     let mut gameWindow = GameWindow::new(GameWindowHints {
         gl_context: (3, 3),
         profile: glfw::OpenGlProfileHint::Core,
-        title: "BUAT",
+        title: format!("BUAT {}", env!("CARGO_PKG_VERSION")).as_str(),
         fullscreen: false,
         size: (1080, 720),
     })
@@ -84,52 +91,63 @@ fn main() {
 
     let shader = shader::Shader::new(vertex_shader_src, fragment_shader_src);
 
-    // -------------------------- Geometry -----------------------
-    let vertices: [f32; 9] = [
-        -0.5, -0.5, 0.0, // bottom-left
-        0.5, -0.5, 0.0, // bottom-right
-        0.0, 0.5, 0.0, // top
+    // -------------------------- Geometry --------------------------
+    let vertices: [f32; 18] = [
+        // positions        // colors
+        -0.5, -0.5, 0.0, 1.0, 0.0, 0.0, // bottom-left
+        0.5, -0.5, 0.0, 0.0, 1.0, 0.0, // bottom-right
+        0.0, 0.5, 0.0, 0.0, 0.0, 1.0, // top
     ];
 
-    let colors: [f32; 9] = [
-        1.0, 0.0, 0.0, // red
-        0.0, 1.0, 0.0, // green
-        0.0, 0.0, 1.0, // blue
-    ];
+    // The triangle's indices
+    let indices: [u32; 3] = [0, 1, 2];
 
-    let (mut vbo_pos, mut vbo_color) = (0, 0);
+    let (mut vbo, mut ebo) = (0, 0);
     let mut vao = VertexArrayObject::new();
 
     unsafe {
         gl::GenVertexArrays(1, &mut vao.id);
-        gl::GenBuffers(1, &mut vbo_pos);
-        gl::GenBuffers(1, &mut vbo_color);
+        gl::GenBuffers(1, &mut vbo);
+        gl::GenBuffers(1, &mut ebo);
 
         gl::BindVertexArray(vao.id);
 
-        // Position buffer
-        gl::BindBuffer(gl::ARRAY_BUFFER, vbo_pos);
+        // -------- VBO --------
+        gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
         gl::BufferData(
             gl::ARRAY_BUFFER,
             (vertices.len() * std::mem::size_of::<f32>()) as _,
             vertices.as_ptr() as *const _,
             gl::STATIC_DRAW,
         );
-        gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, 0, std::ptr::null());
-        gl::EnableVertexAttribArray(0);
 
-        // Color buffer
-        gl::BindBuffer(gl::ARRAY_BUFFER, vbo_color);
+        // -------- EBO --------
+        gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ebo);
         gl::BufferData(
-            gl::ARRAY_BUFFER,
-            (colors.len() * std::mem::size_of::<f32>()) as _,
-            colors.as_ptr() as *const _,
+            gl::ELEMENT_ARRAY_BUFFER,
+            (indices.len() * std::mem::size_of::<u32>()) as _,
+            indices.as_ptr() as *const _,
             gl::STATIC_DRAW,
         );
-        gl::VertexAttribPointer(1, 3, gl::FLOAT, gl::FALSE, 0, std::ptr::null());
+
+        // -------- Vertex Attributes --------
+        let stride = 6 * std::mem::size_of::<f32>() as i32;
+
+        // Position (location = 0)
+        gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, stride, std::ptr::null());
+        gl::EnableVertexAttribArray(0);
+
+        // Color (location = 1)
+        gl::VertexAttribPointer(
+            1,
+            3,
+            gl::FLOAT,
+            gl::FALSE,
+            stride,
+            (3 * std::mem::size_of::<f32>()) as *const _,
+        );
         gl::EnableVertexAttribArray(1);
 
-        gl::BindBuffer(gl::ARRAY_BUFFER, 0);
         gl::BindVertexArray(0);
     }
 
@@ -144,6 +162,7 @@ fn main() {
 
     gameWindow.win.set_cursor_mode(glfw::CursorMode::Disabled);
 
+    debug!("Starting main loop...");
     while !gameWindow.win.should_close() {
         // ----- DELTA TIME -----
         let delta_time = gameWindow.tick();
@@ -194,7 +213,7 @@ fn main() {
         }
 
         // Poll KEY_STATES for smooth movement (dont put in the thingy above)
-        
+
         let mut direction = glm::vec3(0.0, 0.0, 0.0);
         let key_states = gameWindow.key_states;
 
@@ -253,9 +272,11 @@ fn main() {
             shader.set_mat4("projection", &projection).unwrap();
 
             vao.bind();
-            gl::DrawArrays(gl::TRIANGLES, 0, 3);
+            gl::DrawElements(gl::TRIANGLES, 3, gl::UNSIGNED_INT, std::ptr::null());
+
         }
 
         gameWindow.win.swap_buffers();
     }
+    debug!("Closed")
 }

@@ -1,0 +1,73 @@
+2025-12-12 13:36:51.115 DEBUG BUAT - BUAT 0.1.0
+2025-12-12 13:38:37.912 DEBUG BUAT - Launched BUAT v0.1.0
+2025-12-12 13:38:37.921 DEBUG BUAT - Starting main loop...
+2025-12-12 13:38:39.229 DEBUG BUAT - Closed
+2025-12-12 13:42:59.204 DEBUG BUAT::windowing - Creating game window with hints:
+	Context Version: 3.3
+	Profile: CORE
+	Title: <BUAT 0.1.0>
+	Fullscreen?: false
+	Size: 1080x720
+2025-12-12 13:42:59.829 DEBUG BUAT - Launched BUAT v0.1.0
+2025-12-12 13:42:59.840 DEBUG BUAT - Starting main loop...
+2025-12-12 13:43:27.364 DEBUG BUAT - Closed
+2025-12-12 13:46:17.419 DEBUG BUAT - Launched BUAT v0.1.0
+2025-12-12 13:46:17.419 DEBUG BUAT::windowing - Creating GameWindow with hints:
+	Context Version: 3.3
+	Profile: CORE
+	Title: <BUAT 0.1.0>
+	Fullscreen?: false
+	Size: 1080x720
+2025-12-12 13:46:18.112 DEBUG BUAT::windowing - Initialized GLFW
+2025-12-12 13:46:18.112 DEBUG BUAT::windowing - Set GLFW context to 3.3
+2025-12-12 13:46:18.112 DEBUG BUAT::windowing - Set GLFW profile to CORE
+2025-12-12 13:46:18.166 DEBUG BUAT::windowing - Created PWindow
+2025-12-12 13:46:18.166 DEBUG BUAT::windowing - Made PWindow current
+2025-12-12 13:46:18.166 DEBUG BUAT::windowing - Set polling to all
+2025-12-12 13:46:18.166 DEBUG BUAT::windowing - GameWindow created
+2025-12-12 13:46:18.175 DEBUG BUAT - Starting main loop...
+2025-12-12 13:46:19.155 DEBUG BUAT - Closed
+2025-12-12 13:50:12.155 DEBUG BUAT - Launched BUAT v0.1.0
+2025-12-12 13:50:12.155 DEBUG BUAT::windowing - Creating GameWindow with hints:
+	Context Version: 3.3
+	Profile: CORE
+	Title: <BUAT 0.1.0>
+	Fullscreen?: false
+	Size: 1080x720
+2025-12-12 13:50:12.738 DEBUG BUAT::windowing - Initialized GLFW
+2025-12-12 13:50:12.738 DEBUG BUAT::windowing - Set GLFW context to 3.3
+2025-12-12 13:50:12.738 DEBUG BUAT::windowing - Set GLFW profile to CORE
+2025-12-12 13:50:12.794 DEBUG BUAT::windowing - Created PWindow
+2025-12-12 13:50:12.794 DEBUG BUAT::windowing - Made PWindow current
+2025-12-12 13:50:12.794 DEBUG BUAT::windowing - Set polling to all
+2025-12-12 13:50:12.794 DEBUG BUAT::windowing - GameWindow created
+2025-12-12 13:50:12.795 DEBUG BUAT::shader - Compiling VERTEX shader
+2025-12-12 13:50:12.801 DEBUG BUAT::shader - Created shader #1
+2025-12-12 13:50:12.802 DEBUG BUAT::shader - Compiling UNKNOWN shader
+2025-12-12 13:50:12.802 DEBUG BUAT::shader - Created shader #2
+2025-12-12 13:50:12.803 DEBUG BUAT::shader - Created shader program #3
+2025-12-12 13:50:12.803 DEBUG BUAT::shader - Created VAO #1
+2025-12-12 13:50:12.803 DEBUG BUAT - Starting main loop...
+2025-12-12 13:54:31.712 DEBUG BUAT - Closed
+2025-12-12 13:56:35.840 DEBUG BUAT - Launched BUAT v0.1.0
+2025-12-12 13:56:35.840 DEBUG BUAT::windowing - Creating GameWindow with hints:
+	Context Version: 3.3
+	Profile: CORE
+	Title: <BUAT 0.1.0>
+	Fullscreen?: false
+	Size: 1080x720
+2025-12-12 13:56:36.401 DEBUG BUAT::windowing - Initialized GLFW
+2025-12-12 13:56:36.401 DEBUG BUAT::windowing - Set GLFW context to 3.3
+2025-12-12 13:56:36.401 DEBUG BUAT::windowing - Set GLFW profile to CORE
+2025-12-12 13:56:36.458 DEBUG BUAT::windowing - Created PWindow
+2025-12-12 13:56:36.458 DEBUG BUAT::windowing - Made PWindow current
+2025-12-12 13:56:36.458 DEBUG BUAT::windowing - Set polling to all
+2025-12-12 13:56:36.458 DEBUG BUAT::windowing - GameWindow created
+2025-12-12 13:56:36.459 DEBUG BUAT::shader - Compiling VERTEX shader
+2025-12-12 13:56:36.467 DEBUG BUAT::shader - Created shader #1
+2025-12-12 13:56:36.467 DEBUG BUAT::shader - Compiling UNKNOWN shader
+2025-12-12 13:56:36.467 DEBUG BUAT::shader - Created shader #2
+2025-12-12 13:56:36.468 DEBUG BUAT::shader - Created shader program #3
+2025-12-12 13:56:36.468 DEBUG BUAT::shader - Created VAO #1
+2025-12-12 13:56:36.469 DEBUG BUAT - Starting main loop...
+2025-12-12 13:56:46.605 DEBUG BUAT - Closed

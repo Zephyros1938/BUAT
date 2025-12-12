@@ -273,7 +273,6 @@ fn main() {
 
             vao.bind();
             gl::DrawElements(gl::TRIANGLES, 3, gl::UNSIGNED_INT, std::ptr::null());
-
         }
 
         gameWindow.win.swap_buffers();

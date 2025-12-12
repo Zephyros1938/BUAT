@@ -69,7 +69,7 @@ impl Camera3d {
 
     pub fn get_projection_matrix(&self) -> Mat4 {
         Mat4::new_perspective(
-            self.aspect_ratio,    // aspect ratio FIRST
+            self.aspect_ratio,      // aspect ratio FIRST
             self.zoom.to_radians(), // FOV (vertical) SECOND
             self.near,
             self.far,

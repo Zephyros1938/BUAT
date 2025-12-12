@@ -1,5 +1,3 @@
-use crate::mousehandler;
-
 pub struct MouseHandler {
     last_x: f32,
     last_y: f32,

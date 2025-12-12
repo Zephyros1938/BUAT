@@ -1,6 +1,5 @@
 use gl::types::{GLint, GLuint};
-use log::{debug, error, info, trace, warn};
-use log4rs;
+use log::debug;
 use nalgebra_glm as glm;
 use std::ffi::CString;
 const ERROR_ON_NO_UNIFORM_FOUND: bool = false;

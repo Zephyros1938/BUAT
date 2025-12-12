@@ -1,8 +1,5 @@
-use std::process::Output;
-
 use glfw::Context;
-use log::{debug, error, info, trace, warn};
-use log4rs;
+use log::debug;
 
 pub const KEY_COUNT: usize = 1024;
 

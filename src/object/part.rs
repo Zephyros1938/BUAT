@@ -1,6 +1,7 @@
 use gl::{self};
 use nalgebra_glm as glm;
 
+use crate::Render;
 use crate::shader::VertexArrayObject;
 
 pub struct RenderData {
@@ -17,7 +18,7 @@ pub struct BasePart {
 }
 
 impl BasePart {
-    pub fn new(pos: glm::Vec3, rot: glm::Vec3, size: glm::Vec3, color: glm::Vec3) -> BasePart {
+    pub fn new(pos: glm::Vec3, rot: glm::Vec3, size: glm::Vec3, color: glm::Vec3) -> Box<BasePart> {
         let vertices: [f32; 48] = [
             // Back face (z = -0.5)
             -0.5, -0.5, -0.5, color.x, color.y, color.z, // left,  bottom, back
@@ -89,7 +90,7 @@ impl BasePart {
             gl::BindVertexArray(0);
         }
 
-        BasePart {
+        Box::new(BasePart {
             pos,
             rot,
             size,
@@ -98,28 +99,9 @@ impl BasePart {
                 vao,
                 index_count: indices.len() as i32,
             },
-        }
+        })
     }
 
-    pub fn render(
-        &self,
-        shader: &crate::shader::Shader,
-        view_matrix: &glm::Mat4,
-        projection_matrix: &glm::Mat4,
-    ) {
-        let modelMatrix = self.get_model_matrix();
-        shader.set_mat4("model", &modelMatrix).unwrap();
-        self.render_data.vao.bind();
-        unsafe {
-            gl::DrawElements(
-                gl::TRIANGLES,
-                self.render_data.index_count,
-                gl::UNSIGNED_INT,
-                std::ptr::null(),
-            );
-        }
-        self.render_data.vao.unbind();
-    }
     pub fn get_model_matrix(&self) -> glm::Mat4 {
         let mut model = glm::identity();
         model = glm::translate(&model, &self.pos);
@@ -140,5 +122,27 @@ impl BasePart {
 
     pub fn scale(&mut self, scale: glm::Vec3) {
         self.size += scale;
+    }
+}
+
+impl Render for BasePart {
+    fn render(
+        &self,
+        shader: &crate::shader::Shader,
+        view_matrix: &glm::Mat4,
+        projection_matrix: &glm::Mat4,
+    ) {
+        let modelMatrix = self.get_model_matrix();
+        shader.set_mat4("model", &modelMatrix).unwrap();
+        self.render_data.vao.bind();
+        unsafe {
+            gl::DrawElements(
+                gl::TRIANGLES,
+                self.render_data.index_count,
+                gl::UNSIGNED_INT,
+                std::ptr::null(),
+            );
+        }
+        self.render_data.vao.unbind();
     }
 }

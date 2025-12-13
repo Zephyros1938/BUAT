@@ -1,24 +1,24 @@
 #![allow(static_mut_refs)]
+
+use std::any::Any;
+
 extern crate glfw;
 use glfw::{Action, Context, Key};
 use nalgebra_glm as glm;
 
-#[path = "gl/camera.rs"]
-mod camera;
-#[path = "gl/shader.rs"]
-mod shader;
-#[path = "gl/windowing.rs"]
-mod windowing;
+#[path = "gl/camera.rs"] mod camera;
+#[path = "gl/shader.rs"] mod shader;
+#[path = "gl/windowing.rs"] mod windowing;
 
-#[path = "input/mousehandler.rs"]
-mod mousehandler;
+#[path = "input/mousehandler.rs"] mod mousehandler;
 
-#[path = "object/part.rs"]
-mod part;
+#[path = "object/base.rs"] mod base;
+#[path = "object/part.rs"] mod part;
 
 use crate::{
     camera::Camera3d,
     mousehandler::MouseHandler,
+    base::Render,
     part::BasePart,
     windowing::{GameWindow, GameWindowHints},
 };
@@ -31,10 +31,12 @@ use log4rs;
 
 fn main() {
     log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
+
     debug!(
         "{}",
         format!("Launched BUAT v{}", env!("CARGO_PKG_VERSION"))
     );
+
     let mut gameWindow = GameWindow::new(GameWindowHints {
         gl_context: (3, 3),
         profile: glfw::OpenGlProfileHint::Core,
@@ -105,12 +107,14 @@ fn main() {
 
     let shader = shader::Shader::new(vertex_shader_src, fragment_shader_src);
 
-    let mut p: BasePart = BasePart::new(
-        glm::vec3(0.0, 0.0, 0.0),
-        glm::vec3(45.0, 0.0, 0.0),
-        glm::vec3(1.0, 1.0, 1.0),
-        glm::vec3(1.0, 0.0, 0.0),
-    );
+    let mut objects: Vec<Box<dyn Render>> = vec![
+        BasePart::new(
+            glm::vec3(0.0, 0.0, 0.0),
+            glm::vec3(45.0, 0.0, 0.0),
+            glm::vec3(1.0, 1.0, 1.0),
+            glm::vec3(1.0, 0.5, 0.31),
+        )
+    ];
 
     // =============================================================
     // ========================= Main Loop =========================
@@ -216,7 +220,8 @@ fn main() {
             camera.position += direction * camera.move_speed * delta_time;
         }
 
-        p.rotate(glm::vec3(0.0, 20.0 * delta_time, 0.0));
+        // ---------------------- User Script ----------------------
+        // (*objects[0]).rotate(glm::vec3(0.0, 20.0 * delta_time, 0.0));
 
         // ----------------------- Rendering -----------------------
         unsafe {
@@ -231,7 +236,9 @@ fn main() {
             shader.set_mat4("view", &view).unwrap();
             shader.set_mat4("projection", &projection).unwrap();
 
-            p.render(&shader, &view, &projection);
+            for obj in &objects {
+                obj.render(&shader, &view, &projection);
+            }
         }
 
         gameWindow.win.swap_buffers();

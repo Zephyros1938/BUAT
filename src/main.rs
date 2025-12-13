@@ -14,7 +14,7 @@ use nalgebra_glm as glm;
 use crate::{
     camera::Camera3d,
     mousehandler::MouseHandler,
-    shader::VertexArrayObject,
+    part::BasePart,
     windowing::{GameWindow, GameWindowHints},
 };
 use log::{debug, error, info, trace, warn};
@@ -64,6 +64,9 @@ fn main() {
     });
     unsafe {
         gl::Enable(gl::DEPTH_TEST);
+        gl::Enable(gl::CULL_FACE); // Enable face culling
+        gl::CullFace(gl::BACK); // Cull back-facing polygons
+        gl::FrontFace(gl::CCW); // Counter-clockwise winding = front face
     }
 
     // ------------------------ Shaders --------------------------
@@ -74,11 +77,12 @@ fn main() {
 
         uniform mat4 view;
         uniform mat4 projection;
+        uniform mat4 model;
 
         out vec3 ourColor;
 
         void main() {
-            gl_Position = projection * view * vec4(aPos, 1.0);
+            gl_Position = projection * view * model * vec4(aPos, 1.0);
             ourColor = aColor;
         }
     "#;
@@ -95,68 +99,12 @@ fn main() {
 
     let shader = shader::Shader::new(vertex_shader_src, fragment_shader_src);
 
-    // -------------------------- Geometry --------------------------
-    let vertices: [f32; 18] = [
-        // positions        // colors
-        -0.5, -0.5, 0.0, 1.0, 0.0, 0.0, // bottom-left
-        0.5, -0.5, 0.0, 0.0, 1.0, 0.0, // bottom-right
-        0.0, 0.5, 0.0, 0.0, 0.0, 1.0, // top
-    ];
-
-    // The triangle's indices
-    let indices: [u32; 3] = [0, 1, 2];
-
-    let (mut vbo, mut ebo) = (0, 0);
-    let mut vao = VertexArrayObject::new();
-
-    unsafe {
-        gl::GenVertexArrays(1, &mut vao.id);
-        gl::GenBuffers(1, &mut vbo);
-        gl::GenBuffers(1, &mut ebo);
-
-        gl::BindVertexArray(vao.id);
-
-        // -------- VBO --------
-        gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
-        gl::BufferData(
-            gl::ARRAY_BUFFER,
-            (vertices.len() * std::mem::size_of::<f32>()) as _,
-            vertices.as_ptr() as *const _,
-            gl::STATIC_DRAW,
-        );
-
-        // -------- EBO --------
-        gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ebo);
-        gl::BufferData(
-            gl::ELEMENT_ARRAY_BUFFER,
-            (indices.len() * std::mem::size_of::<u32>()) as _,
-            indices.as_ptr() as *const _,
-            gl::STATIC_DRAW,
-        );
-
-        // -------- Vertex Attributes --------
-        let stride = 6 * std::mem::size_of::<f32>() as i32;
-
-        // Position (location = 0)
-        gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, stride, std::ptr::null());
-        gl::EnableVertexAttribArray(0);
-
-        // Color (location = 1)
-        gl::VertexAttribPointer(
-            1,
-            3,
-            gl::FLOAT,
-            gl::FALSE,
-            stride,
-            (3 * std::mem::size_of::<f32>()) as *const _,
-        );
-        gl::EnableVertexAttribArray(1);
-
-        gl::BindVertexArray(0);
-    }
-
-    vao.bind();
-    vao.unbind();
+    let mut p: BasePart = BasePart::new(
+        glm::vec3(0.0, 0.0, 0.0),
+        glm::vec3(45.0, 0.0, 0.0),
+        glm::vec3(1.0, 1.0, 1.0),
+        glm::vec3(1.0, 0.5, 0.31),
+    );
 
     // =============================================================
     // ========================= Main Loop =========================
@@ -262,6 +210,8 @@ fn main() {
             camera.position += direction * camera.move_speed * delta_time;
         }
 
+        p.rotate(glm::vec3(0.0, 20.0 * delta_time, 0.0));
+
         // ----------------------- Rendering -----------------------
         unsafe {
             gl::ClearColor(0.2, 0.3, 0.3, 1.0);
@@ -275,8 +225,7 @@ fn main() {
             shader.set_mat4("view", &view).unwrap();
             shader.set_mat4("projection", &projection).unwrap();
 
-            vao.bind();
-            gl::DrawElements(gl::TRIANGLES, 3, gl::UNSIGNED_INT, std::ptr::null());
+            p.render(&shader, &view, &projection);
         }
 
         gameWindow.win.swap_buffers();

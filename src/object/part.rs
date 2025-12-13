@@ -31,7 +31,14 @@ impl BasePart {
             0.5, 0.5, 0.5, color.x, color.y, color.z, // right, top,    front
         ];
 
-        let indices: [u32; 3 * 2] = [0, 3, 2, 0, 1, 2];
+        let indices: [u32; 3 * 2 * 6] = [
+            0, 3, 1, 0, 2, 3, // back
+            4, 5, 7, 4, 7, 6, // front
+            4, 2, 0, 4, 6, 2, // left
+            1, 3, 7, 1, 7, 5, // right
+            2, 6, 7, 2, 7, 3, // top
+            0, 1, 5, 0, 5, 4, // bottom
+        ];
 
         let (mut vbo, mut ebo) = (0, 0);
         let mut vao = VertexArrayObject::new();
@@ -94,7 +101,7 @@ impl BasePart {
         }
     }
 
-    fn render(
+    pub fn render(
         &self,
         shader: &crate::shader::Shader,
         view_matrix: &glm::Mat4,
@@ -113,25 +120,25 @@ impl BasePart {
         }
         self.render_data.vao.unbind();
     }
-    fn get_model_matrix(&self) -> glm::Mat4 {
+    pub fn get_model_matrix(&self) -> glm::Mat4 {
         let mut model = glm::identity();
         model = glm::translate(&model, &self.pos);
-        model = glm::rotate(&model, self.rot.x, &glm::vec3(1.0, 0.0, 0.0));
-        model = glm::rotate(&model, self.rot.y, &glm::vec3(0.0, 1.0, 0.0));
-        model = glm::rotate(&model, self.rot.z, &glm::vec3(0.0, 0.0, 1.0));
+        model = glm::rotate(&model, self.rot.x.to_radians(), &glm::vec3(1.0, 0.0, 0.0));
+        model = glm::rotate(&model, self.rot.y.to_radians(), &glm::vec3(0.0, 1.0, 0.0));
+        model = glm::rotate(&model, self.rot.z.to_radians(), &glm::vec3(0.0, 0.0, 1.0));
         model = glm::scale(&model, &self.size);
         model
     }
 
-    fn translate(&mut self, translation: glm::Vec3) {
+    pub fn translate(&mut self, translation: glm::Vec3) {
         self.pos += translation;
     }
 
-    fn rotate(&mut self, rotation: glm::Vec3) {
+    pub fn rotate(&mut self, rotation: glm::Vec3) {
         self.rot += rotation;
     }
 
-    fn scale(&mut self, scale: glm::Vec3) {
+    pub fn scale(&mut self, scale: glm::Vec3) {
         self.size += scale;
     }
 }

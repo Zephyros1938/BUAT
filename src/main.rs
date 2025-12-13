@@ -28,7 +28,7 @@ use crate::{
     part::Part,
     windowing::{GameWindow, GameWindowHints},
 };
-use log::debug;
+use log::{debug, info};
 use log4rs;
 
 // =============================================================
@@ -37,7 +37,9 @@ use log4rs;
 
 fn main() {
     log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
-    crate::mesh_loader::load_vertices_from_obj("assets/test.obj");
+    let _x = crate::mesh_loader::load_vertices_from_obj("assets/test.obj").1;
+    info!("{:?}",_x);
+    return;
 
     debug!(
         "{}",

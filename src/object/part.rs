@@ -9,7 +9,7 @@ pub struct RenderData {
     pub index_count: i32,
 }
 
-pub struct BasePart {
+pub struct Part {
     pos: glm::Vec3,
     rot: glm::Vec3,
     size: glm::Vec3,
@@ -17,8 +17,8 @@ pub struct BasePart {
     render_data: RenderData,
 }
 
-impl BasePart {
-    pub fn new(pos: glm::Vec3, rot: glm::Vec3, size: glm::Vec3, color: glm::Vec3) -> Box<BasePart> {
+impl Part {
+    pub fn new(pos: glm::Vec3, rot: glm::Vec3, size: glm::Vec3, color: glm::Vec3) -> Box<Part> {
         let vertices: [f32; 48] = [
             // Back face (z = -0.5)
             -0.5, -0.5, -0.5, color.x, color.y, color.z, // left,  bottom, back
@@ -90,7 +90,7 @@ impl BasePart {
             gl::BindVertexArray(0);
         }
 
-        Box::new(BasePart {
+        Box::new(Part {
             pos,
             rot,
             size,
@@ -125,12 +125,10 @@ impl BasePart {
     }
 }
 
-impl Render for BasePart {
+impl Render for Part {
     fn render(
         &self,
-        shader: &crate::shader::Shader,
-        view_matrix: &glm::Mat4,
-        projection_matrix: &glm::Mat4,
+        shader: &crate::shader::Shader
     ) {
         let modelMatrix = self.get_model_matrix();
         shader.set_mat4("model", &modelMatrix).unwrap();

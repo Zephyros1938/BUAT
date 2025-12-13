@@ -6,20 +6,26 @@ extern crate glfw;
 use glfw::{Action, Context, Key};
 use nalgebra_glm as glm;
 
-#[path = "gl/camera.rs"] mod camera;
-#[path = "gl/shader.rs"] mod shader;
-#[path = "gl/windowing.rs"] mod windowing;
+#[path = "gl/camera.rs"]
+mod camera;
+#[path = "gl/shader.rs"]
+mod shader;
+#[path = "gl/windowing.rs"]
+mod windowing;
 
-#[path = "input/mousehandler.rs"] mod mousehandler;
+#[path = "input/mousehandler.rs"]
+mod mousehandler;
 
-#[path = "object/base.rs"] mod base;
-#[path = "object/part.rs"] mod part;
+#[path = "object/base.rs"]
+mod base;
+#[path = "object/part.rs"]
+mod part;
 
 use crate::{
+    base::Render,
     camera::Camera3d,
     mousehandler::MouseHandler,
-    base::Render,
-    part::BasePart,
+    part::Part,
     windowing::{GameWindow, GameWindowHints},
 };
 use log::{debug, error, info, trace, warn};
@@ -74,46 +80,77 @@ fn main() {
         gl::Enable(gl::CULL_FACE); // Enable face culling
         gl::CullFace(gl::BACK); // Cull back-facing polygons
         gl::FrontFace(gl::CCW); // Counter-clockwise winding = front face
-        gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
     }
 
     // ------------------------ Shaders --------------------------
     let vertex_shader_src = r#"
         #version 330 core
+
         layout (location = 0) in vec3 aPos;
         layout (location = 1) in vec3 aColor;
 
+        out vec3 ourColor;
+        out float fragDistance;
+
+        uniform mat4 model;
         uniform mat4 view;
         uniform mat4 projection;
-        uniform mat4 model;
 
-        out vec3 ourColor;
+        void main()
+        {
+            vec4 worldPos = model * vec4(aPos, 1.0);
+            vec4 viewPos  = view * worldPos;
 
-        void main() {
-            gl_Position = projection * view * model * vec4(aPos, 1.0);
+            fragDistance = length(viewPos.xyz);
             ourColor = aColor;
+
+            gl_Position = projection * viewPos;
         }
+
     "#;
 
     let fragment_shader_src = r#"
         #version 330 core
+
         in vec3 ourColor;
+        in float fragDistance;
+
         out vec4 FragColor;
 
-        void main() {
-            FragColor = vec4(ourColor, 1.0);
+        /* Fog constants */
+        const vec3  FOG_COLOR = vec3(0.0, 0.0, 0.0);
+        const float FOG_START = 0.0;
+        const float FOG_END   = 5.0;
+
+        void main()
+        {
+            float fogFactor = clamp(
+                (FOG_END - fragDistance) / (FOG_END - FOG_START),
+                0.0,
+                1.0
+            );
+
+            vec3 color = mix(FOG_COLOR, ourColor, fogFactor);
+            FragColor = vec4(color, 1.0);
         }
+
     "#;
 
     let shader = shader::Shader::new(vertex_shader_src, fragment_shader_src);
 
     let mut objects: Vec<Box<dyn Render>> = vec![
-        BasePart::new(
+        Part::new(
             glm::vec3(0.0, 0.0, 0.0),
             glm::vec3(45.0, 0.0, 0.0),
             glm::vec3(1.0, 1.0, 1.0),
             glm::vec3(1.0, 0.5, 0.31),
-        )
+        ),
+        Part::new(
+            glm::vec3(2.0, 0.0, 0.0),
+            glm::vec3(0.0, 0.0, 0.0),
+            glm::vec3(1.0, 1.0, 1.0),
+            glm::vec3(1.0, 0.5, 0.31),
+        ),
     ];
 
     // =============================================================
@@ -237,7 +274,7 @@ fn main() {
             shader.set_mat4("projection", &projection).unwrap();
 
             for obj in &objects {
-                obj.render(&shader, &view, &projection);
+                obj.render(&shader);
             }
         }
 

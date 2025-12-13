@@ -1,0 +1,11 @@
+#!/bin/bash
+
+case "$1" in
+  "client")
+    cargo run --bin client
+    ;;
+  *)
+    echo "Usage: $0 <client>"
+    exit 1
+    ;;
+esac

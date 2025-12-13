@@ -1,5 +1,4 @@
 use gl::{self};
-use nalgebra_glm as glm;
 
 use crate::shader::VertexArrayObject;
 

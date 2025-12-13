@@ -3,11 +3,14 @@ extern crate glfw;
 use glfw::{Action, Context, Key};
 use nalgebra_glm as glm;
 
-mod camera;
-mod mousehandler;
-mod shader;
-mod windowing;
-mod part;
+#[path = "gl/camera.rs"] mod camera;
+#[path = "gl/shader.rs"] mod shader;
+#[path = "gl/windowing.rs"] mod windowing;
+
+#[path = "input/mousehandler.rs"] mod mousehandler;
+
+#[path = "object/part.rs"] mod part;
+
 use crate::{
     camera::Camera3d,
     mousehandler::MouseHandler,

@@ -3,13 +3,18 @@ extern crate glfw;
 use glfw::{Action, Context, Key};
 use nalgebra_glm as glm;
 
-#[path = "gl/camera.rs"] mod camera;
-#[path = "gl/shader.rs"] mod shader;
-#[path = "gl/windowing.rs"] mod windowing;
+#[path = "gl/camera.rs"]
+mod camera;
+#[path = "gl/shader.rs"]
+mod shader;
+#[path = "gl/windowing.rs"]
+mod windowing;
 
-#[path = "input/mousehandler.rs"] mod mousehandler;
+#[path = "input/mousehandler.rs"]
+mod mousehandler;
 
-#[path = "object/part.rs"] mod part;
+#[path = "object/part.rs"]
+mod part;
 
 use crate::{
     camera::Camera3d,
@@ -67,6 +72,7 @@ fn main() {
         gl::Enable(gl::CULL_FACE); // Enable face culling
         gl::CullFace(gl::BACK); // Cull back-facing polygons
         gl::FrontFace(gl::CCW); // Counter-clockwise winding = front face
+        gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
     }
 
     // ------------------------ Shaders --------------------------
@@ -103,7 +109,7 @@ fn main() {
         glm::vec3(0.0, 0.0, 0.0),
         glm::vec3(45.0, 0.0, 0.0),
         glm::vec3(1.0, 1.0, 1.0),
-        glm::vec3(1.0, 0.5, 0.31),
+        glm::vec3(1.0, 0.0, 0.0),
     );
 
     // =============================================================

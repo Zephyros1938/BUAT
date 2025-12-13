@@ -6,20 +6,14 @@ extern crate glfw;
 use glfw::{Action, Context, Key};
 use nalgebra_glm as glm;
 
-#[path = "gl/camera.rs"]
-mod camera;
-#[path = "gl/shader.rs"]
-mod shader;
-#[path = "gl/windowing.rs"]
-mod windowing;
+#[path = "gl/camera.rs"] mod camera;
+#[path = "gl/shader.rs"] mod shader;
+#[path = "gl/windowing.rs"] mod windowing;
 
-#[path = "input/mousehandler.rs"]
-mod mousehandler;
+#[path = "input/mousehandler.rs"] mod mousehandler;
 
-#[path = "object/base.rs"]
-mod base;
-#[path = "object/part.rs"]
-mod part;
+#[path = "object/base.rs"] mod base;
+#[path = "object/part.rs"] mod part;
 
 use crate::{
     base::Render,

@@ -18,7 +18,7 @@ pub struct BasePart {
 
 impl BasePart {
     pub fn new(pos: glm::Vec3, rot: glm::Vec3, size: glm::Vec3, color: glm::Vec3) -> BasePart {
-        let cube_data: [f32; 48] = [
+        let vertices: [f32; 48] = [
             // Back face (z = -0.5)
             -0.5, -0.5, -0.5, color.x, color.y, color.z, // left,  bottom, back
             0.5, -0.5, -0.5, color.x, color.y, color.z, // right, bottom, back
@@ -31,15 +31,66 @@ impl BasePart {
             0.5, 0.5, 0.5, color.x, color.y, color.z, // right, top,    front
         ];
 
-        let indexes: [u32; 3 * 2] = [
-            0, 3, 2, 0, 1, 2,
-        ];
+        let indices: [u32; 3 * 2] = [0, 3, 2, 0, 1, 2];
+
+        let (mut vbo, mut ebo) = (0, 0);
+        let mut vao = VertexArrayObject::new();
+
+        unsafe {
+            gl::GenVertexArrays(1, &mut vao.id);
+            gl::GenBuffers(1, &mut vbo);
+            gl::GenBuffers(1, &mut ebo);
+
+            gl::BindVertexArray(vao.id);
+
+            // -------- VBO --------
+            gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
+            gl::BufferData(
+                gl::ARRAY_BUFFER,
+                (vertices.len() * std::mem::size_of::<f32>()) as _,
+                vertices.as_ptr() as *const _,
+                gl::STATIC_DRAW,
+            );
+
+            // -------- EBO --------
+            gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ebo);
+            gl::BufferData(
+                gl::ELEMENT_ARRAY_BUFFER,
+                (indices.len() * std::mem::size_of::<u32>()) as _,
+                indices.as_ptr() as *const _,
+                gl::STATIC_DRAW,
+            );
+
+            // -------- Vertex Attributes --------
+            let stride = 6 * std::mem::size_of::<f32>() as i32;
+
+            // Position (location = 0)
+            gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, stride, std::ptr::null());
+            gl::EnableVertexAttribArray(0);
+
+            // Color (location = 1)
+            gl::VertexAttribPointer(
+                1,
+                3,
+                gl::FLOAT,
+                gl::FALSE,
+                stride,
+                (3 * std::mem::size_of::<f32>()) as *const _,
+            );
+            gl::EnableVertexAttribArray(1);
+
+            gl::BindVertexArray(0);
+        }
 
         BasePart {
             pos,
             rot,
             size,
             color,
+            render_data: RenderData {
+                vao,
+                index_count: indices.len() as i32,
+            },
         }
     }
 

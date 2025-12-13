@@ -7,6 +7,7 @@ mod camera;
 mod mousehandler;
 mod shader;
 mod windowing;
+mod part;
 use crate::{
     camera::Camera3d,
     mousehandler::MouseHandler,

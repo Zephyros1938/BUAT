@@ -18,8 +18,8 @@ mod mousehandler;
 mod base;
 #[path = "object/part.rs"]
 mod part;
-#[path = "object/obj_loader.rs"]
-mod obj_loader;
+#[path = "object/mesh_loader.rs"]
+mod mesh_loader;
 
 use crate::{
     base::Render,
@@ -37,6 +37,7 @@ use log4rs;
 
 fn main() {
     log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
+    crate::mesh_loader::load_vertices_from_obj("assets/test.obj");
 
     debug!(
         "{}",

@@ -18,6 +18,8 @@ mod mousehandler;
 mod base;
 #[path = "object/part.rs"]
 mod part;
+#[path = "object/obj_loader.rs"]
+mod obj_loader;
 
 use crate::{
     base::Render,

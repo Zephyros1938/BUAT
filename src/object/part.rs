@@ -112,26 +112,24 @@ impl Part {
         model
     }
 
+    #[allow(dead_code)]
     pub fn translate(&mut self, translation: glm::Vec3) {
         self.pos += translation;
     }
-
+    #[allow(dead_code)]
     pub fn rotate(&mut self, rotation: glm::Vec3) {
         self.rot += rotation;
     }
-
+    #[allow(dead_code)]
     pub fn scale(&mut self, scale: glm::Vec3) {
         self.size += scale;
     }
 }
 
 impl Render for Part {
-    fn render(
-        &self,
-        shader: &crate::shader::Shader
-    ) {
-        let modelMatrix = self.get_model_matrix();
-        shader.set_mat4("model", &modelMatrix).unwrap();
+    fn render(&self, shader: &crate::shader::Shader) {
+        let model_matrix = self.get_model_matrix();
+        shader.set_mat4("model", &model_matrix).unwrap();
         self.render_data.vao.bind();
         unsafe {
             gl::DrawElements(

@@ -22,9 +22,9 @@ fn check_hyprland() -> bool {
 
 pub struct GameWindow {
     pub key_states: [bool; KEY_COUNT],
-    FULLSCREEN: bool,
-    POSITION: (i32, i32),
-    SIZE: (i32, i32),
+    fullscreen: bool,
+    pos: (i32, i32),
+    dim: (i32, i32),
 
     pub glfw: glfw::Glfw,
     pub win: glfw::PWindow,
@@ -90,9 +90,9 @@ impl GameWindow {
 
         Ok(Self {
             key_states: [false; KEY_COUNT],
-            POSITION: (0, 0),
-            FULLSCREEN: hints.fullscreen,
-            SIZE: hints.size,
+            pos: (0, 0),
+            fullscreen: hints.fullscreen,
+            dim: hints.size,
             glfw: glfw,
             win: p,
             ev: ev,
@@ -113,10 +113,10 @@ impl GameWindow {
         if check_hyprland() {
             return Err("Hyprland dissallows full screen".to_owned());
         }
-        self.FULLSCREEN = !self.FULLSCREEN;
-        if self.FULLSCREEN {
-            self.POSITION = self.win.get_pos();
-            self.SIZE = (self.win.get_size().0 as i32, self.win.get_size().1 as i32);
+        self.fullscreen = !self.fullscreen;
+        if self.fullscreen {
+            self.pos = self.win.get_pos();
+            self.dim = (self.win.get_size().0 as i32, self.win.get_size().1 as i32);
 
             self.glfw.with_primary_monitor(|_, monitor| {
                 if let Some(monitor) = monitor {
@@ -134,20 +134,15 @@ impl GameWindow {
         } else {
             self.win.set_monitor(
                 glfw::WindowMode::Windowed,
-                self.POSITION.0,
-                self.POSITION.1,
-                self.SIZE.0 as u32,
-                self.SIZE.1 as u32,
+                self.pos.0,
+                self.pos.1,
+                self.dim.0 as u32,
+                self.dim.1 as u32,
                 None,
             );
         }
         Ok(())
     }
-}
-
-pub enum WindowMode {
-    FULLSCREEN,
-    WINDOWED,
 }
 
 pub struct GameWindowHints<'a> {

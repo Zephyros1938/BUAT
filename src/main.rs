@@ -1,7 +1,5 @@
 #![allow(static_mut_refs)]
 
-use std::any::Any;
-
 extern crate glfw;
 use glfw::{Action, Context, Key};
 use nalgebra_glm as glm;
@@ -28,7 +26,7 @@ use crate::{
     part::Part,
     windowing::{GameWindow, GameWindowHints},
 };
-use log::{debug, error, info, trace, warn};
+use log::debug;
 use log4rs;
 
 // =============================================================
@@ -43,7 +41,7 @@ fn main() {
         format!("Launched BUAT v{}", env!("CARGO_PKG_VERSION"))
     );
 
-    let mut gameWindow = GameWindow::new(GameWindowHints {
+    let mut game_window = GameWindow::new(GameWindowHints {
         gl_context: (3, 3),
         profile: glfw::OpenGlProfileHint::Core,
         title: format!("BUAT {}", env!("CARGO_PKG_VERSION")).as_str(),
@@ -62,14 +60,14 @@ fn main() {
         1.5,
         45.0,
         true,
-        gameWindow.win.get_size().0 as f32 / gameWindow.win.get_size().1 as f32,
+        game_window.win.get_size().0 as f32 / game_window.win.get_size().1 as f32,
         0.1,
         100.0,
     );
 
     // ------------------------- Load GL -------------------------
     gl::load_with(|s| {
-        gameWindow
+        game_window
             .win
             .get_proc_address(s)
             .map(|p| p as *const _)
@@ -138,6 +136,7 @@ fn main() {
 
     let shader = shader::Shader::new(vertex_shader_src, fragment_shader_src);
 
+    #[allow(unused_mut)]
     let mut objects: Vec<Box<dyn Render>> = vec![
         Part::new(
             glm::vec3(0.0, 0.0, 0.0),
@@ -159,39 +158,39 @@ fn main() {
 
     let mut mousehandler = MouseHandler::new(0., 0.);
 
-    gameWindow.win.set_cursor_mode(glfw::CursorMode::Disabled);
+    game_window.win.set_cursor_mode(glfw::CursorMode::Disabled);
 
     debug!("Starting main loop...");
-    while !gameWindow.win.should_close() {
+    while !game_window.win.should_close() {
         // ----- DELTA TIME -----
-        let delta_time = gameWindow.tick();
+        let delta_time = game_window.tick();
 
-        gameWindow.glfw.poll_events();
+        game_window.glfw.poll_events();
 
         // ------------------------ Input -------------------------
-        for (_, event) in glfw::flush_messages(&gameWindow.ev) {
+        for (_, event) in glfw::flush_messages(&game_window.ev) {
             match event {
-                glfw::WindowEvent::Key(key, _, action, _) => unsafe {
+                glfw::WindowEvent::Key(key, _, action, _) => {
                     if (key as usize) < windowing::KEY_COUNT {
                         match action {
-                            Action::Press => gameWindow.key_states[key as usize] = true,
-                            Action::Release => gameWindow.key_states[key as usize] = false,
+                            Action::Press => game_window.key_states[key as usize] = true,
+                            Action::Release => game_window.key_states[key as usize] = false,
                             _ => {}
                         }
                     }
 
                     if key == Key::Escape && action == Action::Press {
-                        gameWindow.win.set_should_close(true);
+                        game_window.win.set_should_close(true);
                     }
                     if key == Key::LeftAlt && action == Action::Press {
                         mousehandler.locked = !mousehandler.locked;
                         if mousehandler.locked {
-                            gameWindow.win.set_cursor_mode(glfw::CursorMode::Disabled); // Captures and hides cursor
+                            game_window.win.set_cursor_mode(glfw::CursorMode::Disabled); // Captures and hides cursor
                         } else {
-                            gameWindow.win.set_cursor_mode(glfw::CursorMode::Normal); // Captures and hides cursor
+                            game_window.win.set_cursor_mode(glfw::CursorMode::Normal); // Captures and hides cursor
                         }
                     }
-                },
+                }
                 glfw::WindowEvent::Size(width, height) => {
                     unsafe { gl::Viewport(0, 0, width, height) };
                     camera.aspect_ratio = width as f32 / height as f32;
@@ -214,7 +213,7 @@ fn main() {
         // Poll KEY_STATES for smooth movement (dont put in the thingy above)
 
         let mut direction = glm::vec3(0.0, 0.0, 0.0);
-        let key_states = gameWindow.key_states;
+        let key_states = game_window.key_states;
 
         if key_states[Key::W as usize] {
             direction += camera.front;
@@ -278,7 +277,7 @@ fn main() {
             }
         }
 
-        gameWindow.win.swap_buffers();
+        game_window.win.swap_buffers();
     }
     debug!("Closed")
 }

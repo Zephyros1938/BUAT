@@ -2,28 +2,27 @@ use std::env;
 use std::process::exit;
 
 use glfw::{Action, Context, Key};
-use nalgebra_glm as glm;
 use log::{debug, info};
 use log4rs;
 use mini_redis::client;
-use tokio::runtime;
-use tokio::time::{Duration, sleep};
-
+use nalgebra_glm as glm;
 
 mod graphics;
-mod object;
 mod input;
+mod object;
 mod util;
+
+use crate::graphics::shader::Shader;
 
 use {
     graphics::{
         camera::Camera3d,
         shader,
+        texture::{Texture, TextureLoadOptions, load_texture_from_file},
         windowing::{self, GameWindow, GameWindowHints},
-        texture::{Texture, TextureLoadOptions, load_texture_from_file}
     },
     input::mousehandler::MouseHandler,
-    object::{base::Render, mesh_loader, part::Part},
+    object::{base::Render, mesh_loader, part, part::Part},
 };
 
 // =============================================================
@@ -56,25 +55,21 @@ async fn main() {
         format!("Launched BUAT v{}", env!("CARGO_PKG_VERSION"))
     );
 
-
     // -------------------- Connect to Server --------------------
     let env_args: Vec<String> = env::args().collect();
     debug!("Client args: {:?}", env_args);
 
     let uri_default: String = String::from("127.0.0.1:6700");
-    let uri: String = env_args
-        .get(2)
-        .unwrap_or(&uri_default)
-        .to_string();
+    let uri: String = env_args.get(2).unwrap_or(&uri_default).to_string();
 
     let sid: u64 = env_args
         .get(1)
         .expect("No ID specified!")
         .parse::<u64>()
         .expect("Invalid ID!");
-    
+
     preconnect(&uri).await;
-    
+
     // ------------------------- Window -------------------------
     let mut game_window = GameWindow::new(GameWindowHints {
         gl_context: (3, 3),
@@ -101,18 +96,24 @@ async fn main() {
     }
 
     // ------------------------ Shaders --------------------------
-    let shader = shader::Shader::from_files(
+    let shader_norm = shader::Shader::from_files(
         "assets/shaders/part_default.vert",
         "assets/shaders/part_default.frag",
-    ).unwrap();
+    )
+    .unwrap();
+    let shader_tex = shader::Shader::from_files(
+        "assets/shaders/part_textured.vert",
+        "assets/shaders/part_textured.frag",
+    )
+    .unwrap();
     let texture_test = load_texture_from_file(
         "assets/opl_icon.png",
         TextureLoadOptions {
             generate_mipmaps: true,
             ..Default::default()
         },
-    ).unwrap();
-
+    )
+    .unwrap();
 
     // -------------------- Camera Initialization --------------------
     let mut camera = Camera3d::new(
@@ -137,12 +138,22 @@ async fn main() {
             glm::vec3(45.0, 0.0, 0.0),
             glm::vec3(1.0, 1.0, 1.0),
             glm::vec3(1.0, 0.5, 0.31),
+            &shader_norm,
         ),
         Part::new(
             glm::vec3(2.0, 0.0, 0.0),
             glm::vec3(0.0, 0.0, 0.0),
             glm::vec3(1.0, 1.0, 1.0),
             glm::vec3(1.0, 0.5, 0.31),
+            &shader_norm,
+        ),
+        part::gen_part_textured(
+            glm::vec3(-2.0, 0.0, 0.0),
+            glm::vec3(0.0, 0.0, 0.0),
+            glm::vec3(1.0, 1.0, 1.0),
+            glm::vec3(1.0, 0.5, 0.31),
+            texture_test,
+            &shader_tex,
         ),
     ];
 
@@ -258,17 +269,30 @@ async fn main() {
             gl::ClearColor(0.2, 0.3, 0.3, 1.0);
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
 
-            shader.use_program();
-
             let view = camera.get_view_matrix();
             let projection = camera.get_projection_matrix();
 
-            shader.set_mat4("view", &view).unwrap();
-            shader.set_mat4("projection", &projection).unwrap();
+            let mut target_shader = &shader_norm;
 
             for obj in &objects {
-                obj.render(&shader);
+                if let Some(p) = obj.as_any().downcast_ref::<Part>() {
+                    gl::UseProgram(p.render_data.program_id);
+
+                    if let Some(t) = &p.texture {
+                        t.bind(0);
+                        shader_tex.set_int("uTexture", 0).unwrap(); // bind sampler to GL_TEXTURE0
+                        target_shader = &shader_tex;
+                    } else {
+                        target_shader = &shader_norm;
+                    }
+                    target_shader.use_program();
+                    target_shader.set_mat4("view", &view).unwrap();
+                    target_shader.set_mat4("projection", &projection).unwrap();
+                    obj.render(&target_shader);
+                }
             }
+
+            // println!("{}", 1.0/delta_time)
         }
 
         game_window.win.swap_buffers();

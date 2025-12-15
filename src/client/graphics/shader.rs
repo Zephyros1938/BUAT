@@ -11,7 +11,10 @@ fn compile_shader(source: &str, kind: GLuint) -> GLuint {
     debug!(
         "Compiling {} shader",
         match kind {
-            gl::VERTEX_SHADER => "VERTEX",
+            gl::VERTEX_SHADER => "VERT",
+            gl::FRAGMENT_SHADER => "FRAG",
+            gl::COMPUTE_SHADER => "COMP",
+            gl::GEOMETRY_SHADER => "GEOM",
             _ => "UNKNOWN",
         }
     );
@@ -44,7 +47,7 @@ fn compile_shader(source: &str, kind: GLuint) -> GLuint {
         );
     }
 
-    debug!("Created shader #{}", id);
+    debug!("Created shader with id {}", id);
 
     id
 }
@@ -72,7 +75,7 @@ impl Shader {
 
             program
         };
-        debug!("Created shader program #{}", program);
+        debug!("Created program with id {}", program);
 
         Shader { program }
     }
@@ -126,6 +129,23 @@ impl Shader {
             gl::Uniform3fv(location, 1, vec.as_ptr());
         }
         Ok(())
+    }
+
+    pub fn set_int(&self, name: &str, v: i32) -> Result<(), String> {
+        let location = get_uniform_location(self.program, name);
+        if location == -1 {
+            if ERROR_ON_NO_UNIFORM_FOUND {
+                return Err(format!("Uniform '{}' not found in shader program", name));
+            } else {
+                return Ok(());
+            }
+        }
+
+        unsafe {
+            gl::Uniform1i(location, v);
+        }
+        Ok(())
+
     }
 }
 

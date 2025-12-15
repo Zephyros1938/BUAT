@@ -8,6 +8,15 @@ pub struct Texture {
     pub height: i32,
 }
 
+impl Texture {
+    pub fn bind(&self, unit: u32) {
+        unsafe {
+            gl::ActiveTexture(gl::TEXTURE0 + unit);
+            gl::BindTexture(gl::TEXTURE_2D, self.id);
+        }
+    }
+}
+
 pub struct TextureLoadOptions {
     pub generate_mipmaps: bool,
     pub wrap_s: GLint,
@@ -85,7 +94,10 @@ pub fn load_texture_from_file(
         return Err("Failed to generate texture ID".to_string());
     }
 
-    debug!("Loaded texture from {} ({}x{}), with ID #{}", path, width, height, texture_id);
+    debug!(
+        "Loaded texture from {} ({}x{}), with ID #{}",
+        path, width, height, texture_id
+    );
 
     Ok(Texture {
         id: texture_id,

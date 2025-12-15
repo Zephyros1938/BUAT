@@ -1,7 +1,11 @@
+use std::env;
+
 use glfw::{Action, Context, Key};
 use nalgebra_glm as glm;
 use log::{debug, info};
 use log4rs;
+use mini_redis::client;
+use tokio::runtime;
 
 mod graphics;
 mod object;
@@ -17,13 +21,27 @@ use {
     object::{base::Render, mesh_loader, part::Part},
 };
 
+// =============================================================
+// ====================== Server Connect =======================
+// =============================================================
 
+async fn connect(uri: &String) {
+    let mut client = client::connect(uri).await.unwrap();
+    
+    loop {
+        let result = client.get("hello").await;
+        println!("Server works! Result: {:?}", result);
+        tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
+    }
+}
 
 // =============================================================
 // ======================= Main Program ========================
 // =============================================================
 
-fn main() {
+#[tokio::main]
+async fn main() {
+    // -------------------- Logging & Windowing --------------------
     log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
     let _x = mesh_loader::load_vertices_from_obj("assets/test.obj").1;
     info!("{:?}", _x);
@@ -42,21 +60,26 @@ fn main() {
     })
     .unwrap();
 
-    // -------------------- Camera Initialization --------------------
-    let mut camera = Camera3d::new(
-        glm::vec3(0., 0., 3.),
-        glm::vec3(0., 1., 0.),
-        -0.0,
-        0.0,
-        0.15,
-        1.5,
-        45.0,
-        true,
-        game_window.win.get_size().0 as f32 / game_window.win.get_size().1 as f32,
-        0.1,
-        100.0,
-    );
+    // -------------------- Connect to Server --------------------
+    let env_args: Vec<String> = env::args().collect();
+    debug!("Client args: {:?}", env_args);
 
+    let uri_default: String = String::from("127.0.0.1:6700");
+    let uri: String = env_args
+        .get(2)
+        .unwrap_or(&uri_default)
+        .to_string();
+
+    let sid: u64 = env_args
+        .get(1)
+        .expect("No ID specified!")
+        .parse::<u64>()
+        .expect("Invalid ID!");
+    
+    tokio::spawn(async move {
+        connect(&uri).await;
+    });
+    
     // ------------------------- Load GL -------------------------
     gl::load_with(|s| {
         game_window
@@ -110,7 +133,7 @@ fn main() {
         /* Fog constants */
         const vec3  FOG_COLOR = vec3(0.0, 0.0, 0.0);
         const float FOG_START = 0.0;
-        const float FOG_END   = 5.0;
+        const float FOG_END   = 20.0;
 
         void main()
         {
@@ -128,6 +151,23 @@ fn main() {
 
     let shader = shader::Shader::new(vertex_shader_src, fragment_shader_src);
 
+
+    // -------------------- Camera Initialization --------------------
+    let mut camera = Camera3d::new(
+        glm::vec3(0., 0., 3.),
+        glm::vec3(0., 1., 0.),
+        -0.0,
+        0.0,
+        0.15,
+        1.5,
+        45.0,
+        true,
+        game_window.win.get_size().0 as f32 / game_window.win.get_size().1 as f32,
+        0.1,
+        100.0,
+    );
+
+    // Test objects (will be removed later)
     #[allow(unused_mut)]
     let mut objects: Vec<Box<dyn Render>> = vec![
         Part::new(
@@ -149,10 +189,10 @@ fn main() {
     // =============================================================
 
     let mut mousehandler = MouseHandler::new(0., 0.);
-
     game_window.win.set_cursor_mode(glfw::CursorMode::Disabled);
 
     debug!("Starting main loop...");
+
     while !game_window.win.should_close() {
         // ----- DELTA TIME -----
         let delta_time = game_window.tick();

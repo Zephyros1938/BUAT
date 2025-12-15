@@ -1,11 +1,14 @@
 #!/bin/bash
 
 case "$1" in
-  "client")
-    cargo run --bin client
-    ;;
-  *)
-    echo "Usage: $0 <client>"
-    exit 1
-    ;;
+"client")
+  cargo run --bin client -- ${@:2}
+  ;;
+"server")
+  cargo run --bin server -- ${@:2}
+  ;;
+*)
+  echo "Usage: $0 <client>"
+  exit 1
+  ;;
 esac

@@ -33,6 +33,8 @@ async fn main() {
 
     loop {
         let (socket, userdata) = listener.accept().await.unwrap();
-        process(socket, userdata).await;
+        tokio::spawn(async move {
+            process(socket, userdata).await;
+        });
     }
 }

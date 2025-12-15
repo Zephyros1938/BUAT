@@ -1,4 +1,5 @@
 use std::env;
+use std::process::exit;
 
 use glfw::{Action, Context, Key};
 use nalgebra_glm as glm;
@@ -6,6 +7,7 @@ use log::{debug, info};
 use log4rs;
 use mini_redis::client;
 use tokio::runtime;
+use tokio::time::{Duration, sleep};
 
 mod graphics;
 mod object;
@@ -25,13 +27,13 @@ use {
 // ====================== Server Connect =======================
 // =============================================================
 
-async fn connect(uri: &String) {
-    let mut client = client::connect(uri).await.unwrap();
-    
-    loop {
-        let result = client.get("hello").await;
-        println!("Server works! Result: {:?}", result);
-        tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
+async fn preconnect(uri: &String) {
+    if let Ok(mut client) = client::connect(uri).await {
+        let result = client.get("ping").await;
+        println!("Server pinged. Result: {:?}", result);
+    } else {
+        println!("Can't connect to server!");
+        exit(1);
     }
 }
 
@@ -41,7 +43,7 @@ async fn connect(uri: &String) {
 
 #[tokio::main]
 async fn main() {
-    // -------------------- Logging & Windowing --------------------
+    // ------------------------ Logging -------------------------
     log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
     let _x = mesh_loader::load_vertices_from_obj("assets/test.obj").1;
     info!("{:?}", _x);
@@ -51,14 +53,6 @@ async fn main() {
         format!("Launched BUAT v{}", env!("CARGO_PKG_VERSION"))
     );
 
-    let mut game_window = GameWindow::new(GameWindowHints {
-        gl_context: (3, 3),
-        profile: glfw::OpenGlProfileHint::Core,
-        title: format!("BUAT {}", env!("CARGO_PKG_VERSION")).as_str(),
-        fullscreen: false,
-        size: (1080, 720),
-    })
-    .unwrap();
 
     // -------------------- Connect to Server --------------------
     let env_args: Vec<String> = env::args().collect();
@@ -76,10 +70,18 @@ async fn main() {
         .parse::<u64>()
         .expect("Invalid ID!");
     
-    tokio::spawn(async move {
-        connect(&uri).await;
-    });
+    preconnect(&uri).await;
     
+    // ------------------------- Window -------------------------
+    let mut game_window = GameWindow::new(GameWindowHints {
+        gl_context: (3, 3),
+        profile: glfw::OpenGlProfileHint::Core,
+        title: format!("BUAT {}", env!("CARGO_PKG_VERSION")).as_str(),
+        fullscreen: false,
+        size: (1080, 720),
+    })
+    .unwrap();
+
     // ------------------------- Load GL -------------------------
     gl::load_with(|s| {
         game_window

@@ -8,7 +8,9 @@ case "$1" in
   cargo run --bin server -- ${@:2}
   ;;
 *)
-  echo "Usage: $0 <client>"
+  echo "Usage:
+$0 server <ip:port>
+$0 client <gameid> [ip:port]"
   exit 1
   ;;
 esac

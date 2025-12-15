@@ -1,36 +1,23 @@
-#![allow(static_mut_refs)]
-
-extern crate glfw;
 use glfw::{Action, Context, Key};
 use nalgebra_glm as glm;
-
-#[path = "gl/camera.rs"]
-mod camera;
-#[path = "gl/shader.rs"]
-mod shader;
-#[path = "gl/windowing.rs"]
-mod windowing;
-
-#[path = "input/mousehandler.rs"]
-mod mousehandler;
-
-#[path = "object/base.rs"]
-mod base;
-#[path = "object/part.rs"]
-mod part;
-#[path = "object/mesh_loader.rs"]
-mod mesh_loader;
-
-use crate::{
-    base::Render,
-    camera::Camera3d,
-    mousehandler::MouseHandler,
-    part::Part,
-    windowing::{GameWindow, GameWindowHints},
-};
-
 use log::{debug, info};
 use log4rs;
+
+mod graphics;
+mod object;
+mod input;
+
+use {
+    graphics::{
+        camera::Camera3d,
+        shader,
+        windowing::{self, GameWindow, GameWindowHints},
+    },
+    input::mousehandler::MouseHandler,
+    object::{base::Render, mesh_loader, part::Part},
+};
+
+
 
 // =============================================================
 // ======================= Main Program ========================
@@ -38,8 +25,8 @@ use log4rs;
 
 fn main() {
     log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
-    let _x = crate::mesh_loader::load_vertices_from_obj("assets/test.obj").1;
-    info!("{:?}",_x);
+    let _x = mesh_loader::load_vertices_from_obj("assets/test.obj").1;
+    info!("{:?}", _x);
 
     debug!(
         "{}",

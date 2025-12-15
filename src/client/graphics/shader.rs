@@ -1,7 +1,7 @@
 use gl::types::{GLint, GLuint};
-use log::debug;
 use nalgebra_glm as glm;
-use std::ffi::CString;
+use log::debug;
+
 const ERROR_ON_NO_UNIFORM_FOUND: bool = false;
 pub struct Shader {
     pub program: GLuint,
@@ -16,7 +16,7 @@ fn compile_shader(source: &str, kind: GLuint) -> GLuint {
         }
     );
     let id = unsafe { gl::CreateShader(kind) };
-    let c_source = CString::new(source.as_bytes()).unwrap();
+    let c_source = std::ffi::CString::new(source.as_bytes()).unwrap();
 
     unsafe {
         gl::ShaderSource(id, 1, &c_source.as_ptr(), std::ptr::null());
@@ -31,7 +31,7 @@ fn compile_shader(source: &str, kind: GLuint) -> GLuint {
         unsafe { gl::GetShaderiv(id, gl::INFO_LOG_LENGTH, &mut len) };
 
         let error_buffer = vec![0u8; (len as usize).saturating_sub(1)];
-        let error_log = CString::new(error_buffer).unwrap();
+        let error_log = std::ffi::CString::new(error_buffer).unwrap();
 
         unsafe {
             gl::GetShaderInfoLog(id, len, std::ptr::null_mut(), error_log.as_ptr() as *mut _);
@@ -49,7 +49,7 @@ fn compile_shader(source: &str, kind: GLuint) -> GLuint {
     id
 }
 fn get_uniform_location(program: GLuint, name: &str) -> i32 {
-    let c_name = CString::new(name)
+    let c_name = std::ffi::CString::new(name)
         .map_err(|_| format!("Failed to create CString for uniform: {}", name))
         .unwrap();
 

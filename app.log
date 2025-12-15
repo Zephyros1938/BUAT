@@ -377,3 +377,29 @@
 2025-12-13 16:20:07.026 DEBUG client::shader - Created VAO #3
 2025-12-13 16:20:07.026 DEBUG client - Starting main loop...
 2025-12-13 16:20:09.220 DEBUG client - Closed
+2025-12-13 16:27:54.320 INFO client - [0, 1, 2]
+2025-12-13 16:27:54.320 DEBUG client - Launched BUAT v0.1.0
+2025-12-13 16:27:54.332 DEBUG client::windowing - 
+2025-12-13 16:27:54.332 DEBUG client::windowing - false
+2025-12-13 16:27:54.332 DEBUG client::windowing - Creating GameWindow with hints:
+	Context Version: 3.3
+	Profile: CORE
+	Title: <BUAT 0.1.0>
+	Fullscreen?: false
+	Size: 1080x720
+2025-12-13 16:27:54.385 DEBUG client::windowing - Initialized GLFW
+2025-12-13 16:27:54.385 DEBUG client::windowing - Set GLFW context to 3.3
+2025-12-13 16:27:54.385 DEBUG client::windowing - Set GLFW profile to CORE
+2025-12-13 16:27:54.537 DEBUG client::windowing - Created PWindow
+2025-12-13 16:27:54.537 DEBUG client::windowing - Made PWindow current
+2025-12-13 16:27:54.537 DEBUG client::windowing - Set polling to all
+2025-12-13 16:27:54.537 DEBUG client::windowing - GameWindow created
+2025-12-13 16:27:54.538 DEBUG client::shader - Compiling VERTEX shader
+2025-12-13 16:27:54.548 DEBUG client::shader - Created shader #1
+2025-12-13 16:27:54.548 DEBUG client::shader - Compiling UNKNOWN shader
+2025-12-13 16:27:54.548 DEBUG client::shader - Created shader #2
+2025-12-13 16:27:54.560 DEBUG client::shader - Created shader program #3
+2025-12-13 16:27:54.560 DEBUG client::shader - Created VAO #1
+2025-12-13 16:27:54.561 DEBUG client::shader - Created VAO #3
+2025-12-13 16:27:54.561 DEBUG client - Starting main loop...
+2025-12-13 16:28:07.461 DEBUG client - Closed

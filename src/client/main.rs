@@ -12,7 +12,13 @@ mod input;
 mod object;
 mod util;
 
-use crate::graphics::shader::Shader;
+use crate::{
+    graphics::shader::Shader,
+    object::{
+        mesh_loader::{MESH_UV, MESH_VERT},
+        part::PartImpl,
+    },
+};
 
 use {
     graphics::{
@@ -47,7 +53,7 @@ async fn preconnect(uri: &String) {
 async fn main() {
     // ------------------------ Logging -------------------------
     log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
-    let _x = mesh_loader::load_vertices_from_obj("assets/test.obj").1;
+    let _x = mesh_loader::load_vertices_from_obj("assets/test.obj", MESH_VERT | MESH_UV).unwrap();
     info!("{:?}", _x);
 
     debug!(
@@ -110,6 +116,8 @@ async fn main() {
         "assets/opl_icon.png",
         TextureLoadOptions {
             generate_mipmaps: true,
+            min_filter: gl::NEAREST as i32,
+            mag_filter: gl::NEAREST as i32,
             ..Default::default()
         },
     )
@@ -262,12 +270,14 @@ async fn main() {
         }
 
         // ---------------------- User Script ----------------------
-        // (*objects[0]).rotate(glm::vec3(0.0, 20.0 * delta_time, 0.0));
+        if let Some(p) = objects[0].as_mut_any().downcast_mut::<Part>() {
+            Part::rotate(p, glm::Vec3::new(0.25, 0.7, 0.33));
+        }
 
         // ----------------------- Rendering -----------------------
         unsafe {
             gl::ClearColor(0.2, 0.3, 0.3, 1.0);
-            gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
+            gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT | gl::STENCIL_BUFFER_BIT);
 
             let view = camera.get_view_matrix();
             let projection = camera.get_projection_matrix();
@@ -291,8 +301,6 @@ async fn main() {
                     obj.render(&target_shader);
                 }
             }
-
-            // println!("{}", 1.0/delta_time)
         }
 
         game_window.win.swap_buffers();

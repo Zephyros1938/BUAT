@@ -91,7 +91,7 @@ const PART_INDICES_INVERT_TEX: [u32; 36] = [
     20, 21, 22, 20, 22, 23, // bottom
 ];
 
-trait PartImpl {
+pub trait PartImpl {
     fn get_model_matrix(&self) -> glm::Mat4 {
         glm::Mat4::identity()
     }
@@ -108,7 +108,7 @@ impl Part {
         color: glm::Vec3,
         shader: &Shader,
     ) -> Box<Part> {
-        let vertices: [f32; 48] = gen_inverse_part_vertices_color(color);
+        let vertices: [f32; 48] = gen_part_vertices_color(color);
 
         let (mut vbo, mut ebo) = (0, 0);
         let mut vao = VertexArrayObject::new();
@@ -217,6 +217,10 @@ impl Render for Part {
     }
 
     fn as_any(&self) -> &dyn Any {
+        self
+    }
+    
+    fn as_mut_any(&mut self) -> &mut dyn Any {
         self
     }
 }

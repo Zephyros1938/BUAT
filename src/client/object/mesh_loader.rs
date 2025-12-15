@@ -1,10 +1,46 @@
 use std::io::BufRead;
 
-pub fn load_vertices_from_obj(file_path: &str) -> (Vec<f32>, Vec<u32>) {
+pub const MESH_VERT: u32 = 0b0000_0000_0000_0001;
+pub const MESH_INDICE: u32 = 0b0000_0000_0000_0010;
+pub const MESH_COLOR: u32 = 0b0000_0000_0000_0100;
+pub const MESH_UV: u32 = 0b0000_0000_0000_1000;
+
+#[derive(Debug)]
+pub enum MeshLoadError {
+    Io(std::io::Error),
+    Parse(std::num::ParseFloatError),
+    InvalidFormat(String),
+}
+
+impl From<std::io::Error> for MeshLoadError {
+    fn from(err: std::io::Error) -> Self {
+        MeshLoadError::Io(err)
+    }
+}
+impl From<std::num::ParseFloatError> for MeshLoadError {
+    fn from(err: std::num::ParseFloatError) -> Self {
+        MeshLoadError::Parse(err)
+    }
+}
+
+pub fn load_vertices_from_obj(
+    file_path: &str,
+    flags: u32,
+) -> Result<
+    (
+        (bool, Vec<f32>),
+        (bool, Vec<u32>),
+        (bool, Vec<f32>),
+        (bool, Vec<f32>),
+    ),
+    MeshLoadError,
+> {
     let mut vertices: Vec<f32> = Vec::new();
     let mut indices: Vec<u32> = Vec::new();
+    let mut colors: Vec<f32> = Vec::new();
+    let mut uvs: Vec<f32> = Vec::new();
 
-    let file = std::fs::File::open(file_path).expect("Failed to open OBJ file");
+    let file = std::fs::File::open(file_path)?;
     let reader = std::io::BufReader::new(file);
 
     for line in reader.lines() {
@@ -25,7 +61,8 @@ pub fn load_vertices_from_obj(file_path: &str) -> (Vec<f32>, Vec<u32>) {
                 vertices.push(y);
                 vertices.push(z);
             }
-            "f" => { // Face Data (indiced)
+            "f" => {
+                // Face Data (indiced)
                 let mut face_indices: Vec<u32> = Vec::new();
 
                 for part in &parts[1..] {
@@ -57,5 +94,10 @@ pub fn load_vertices_from_obj(file_path: &str) -> (Vec<f32>, Vec<u32>) {
         }
     }
 
-    (vertices, indices)
+    Ok((
+        (flags & MESH_VERT != 0, vertices),
+        (flags & MESH_INDICE != 0, indices),
+        (flags & MESH_COLOR != 0, colors),
+        (flags & MESH_UV != 0, uvs),
+    ))
 }

@@ -145,7 +145,6 @@ impl Shader {
             gl::Uniform1i(location, v);
         }
         Ok(())
-
     }
 }
 

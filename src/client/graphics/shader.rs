@@ -1,6 +1,6 @@
 use gl::types::{GLint, GLuint};
-use nalgebra_glm as glm;
 use log::debug;
+use nalgebra_glm as glm;
 
 const ERROR_ON_NO_UNIFORM_FOUND: bool = false;
 pub struct Shader {
@@ -75,6 +75,19 @@ impl Shader {
         debug!("Created shader program #{}", program);
 
         Shader { program }
+    }
+
+    pub fn from_files(
+        vertex_path: &str,
+        fragment_path: &str,
+    ) -> Result<Shader, Box<dyn std::error::Error>> {
+        let vertex_source = crate::util::file::load_file_as_cstr(vertex_path)?;
+        let fragment_source = crate::util::file::load_file_as_cstr(fragment_path)?;
+
+        Ok(Shader::new(
+            &vertex_source.to_string_lossy(),
+            &fragment_source.to_string_lossy(),
+        ))
     }
 
     pub fn use_program(&self) {

@@ -9,15 +9,18 @@ use mini_redis::client;
 use tokio::runtime;
 use tokio::time::{Duration, sleep};
 
+
 mod graphics;
 mod object;
 mod input;
+mod util;
 
 use {
     graphics::{
         camera::Camera3d,
         shader,
         windowing::{self, GameWindow, GameWindowHints},
+        texture::{Texture, TextureLoadOptions, load_texture_from_file}
     },
     input::mousehandler::MouseHandler,
     object::{base::Render, mesh_loader, part::Part},
@@ -98,60 +101,17 @@ async fn main() {
     }
 
     // ------------------------ Shaders --------------------------
-    let vertex_shader_src = r#"
-        #version 330 core
-
-        layout (location = 0) in vec3 aPos;
-        layout (location = 1) in vec3 aColor;
-
-        out vec3 ourColor;
-        out float fragDistance;
-
-        uniform mat4 model;
-        uniform mat4 view;
-        uniform mat4 projection;
-
-        void main()
-        {
-            vec4 worldPos = model * vec4(aPos, 1.0);
-            vec4 viewPos  = view * worldPos;
-
-            fragDistance = length(viewPos.xyz);
-            ourColor = aColor;
-
-            gl_Position = projection * viewPos;
-        }
-
-    "#;
-
-    let fragment_shader_src = r#"
-        #version 330 core
-
-        in vec3 ourColor;
-        in float fragDistance;
-
-        out vec4 FragColor;
-
-        /* Fog constants */
-        const vec3  FOG_COLOR = vec3(0.0, 0.0, 0.0);
-        const float FOG_START = 0.0;
-        const float FOG_END   = 20.0;
-
-        void main()
-        {
-            float fogFactor = clamp(
-                (FOG_END - fragDistance) / (FOG_END - FOG_START),
-                0.0,
-                1.0
-            );
-
-            vec3 color = mix(FOG_COLOR, ourColor, fogFactor);
-            FragColor = vec4(color, 1.0);
-        }
-
-    "#;
-
-    let shader = shader::Shader::new(vertex_shader_src, fragment_shader_src);
+    let shader = shader::Shader::from_files(
+        "assets/shaders/part_default.vert",
+        "assets/shaders/part_default.frag",
+    ).unwrap();
+    let texture_test = load_texture_from_file(
+        "assets/opl_icon.png",
+        TextureLoadOptions {
+            generate_mipmaps: true,
+            ..Default::default()
+        },
+    ).unwrap();
 
 
     // -------------------- Camera Initialization --------------------

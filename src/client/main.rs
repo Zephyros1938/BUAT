@@ -155,7 +155,7 @@ async fn main() {
             glm::vec3(1.0, 0.5, 0.31),
             &shader_norm,
         ),
-        part::gen_part_textured(
+        Part::gen_part_textured(
             glm::vec3(-2.0, 0.0, 0.0),
             glm::vec3(0.0, 0.0, 0.0),
             glm::vec3(1.0, 1.0, 1.0),

@@ -172,6 +172,77 @@ impl Part {
             texture: None,
         })
     }
+
+    pub fn gen_part_textured(
+        pos: glm::Vec3,
+        rot: glm::Vec3,
+        size: glm::Vec3,
+        basecolor: glm::Vec3,
+        texture: Texture,
+        shader: &Shader,
+    ) -> Box<Part> {
+        let (mut vbo, mut ebo) = (0, 0);
+        let mut vao = VertexArrayObject::new();
+
+        unsafe {
+            gl::GenVertexArrays(1, &mut vao.id);
+            gl::GenBuffers(1, &mut vbo);
+            gl::GenBuffers(1, &mut ebo);
+
+            gl::BindVertexArray(vao.id);
+
+            // -------- VBO --------
+            gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
+            gl::BufferData(
+                gl::ARRAY_BUFFER,
+                (PART_VERTICES_TEX.len() * std::mem::size_of::<f32>()) as _,
+                PART_VERTICES_TEX.as_ptr() as *const _,
+                gl::STATIC_DRAW,
+            );
+
+            // -------- EBO --------
+            gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ebo);
+            gl::BufferData(
+                gl::ELEMENT_ARRAY_BUFFER,
+                (PART_INDICES_TEX.len() * std::mem::size_of::<u32>()) as _,
+                PART_INDICES_TEX.as_ptr() as *const _,
+                gl::STATIC_DRAW,
+            );
+
+            // -------- Vertex Attributes --------
+            let stride = 5 * std::mem::size_of::<f32>() as i32;
+
+            // Position (location = 0)
+            gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, stride, std::ptr::null());
+            gl::EnableVertexAttribArray(0);
+
+            // Color (location = 1)
+            gl::VertexAttribPointer(
+                1,
+                2,
+                gl::FLOAT,
+                gl::FALSE,
+                stride,
+                (3 * std::mem::size_of::<f32>()) as *const _,
+            );
+            gl::EnableVertexAttribArray(1);
+
+            gl::BindVertexArray(0);
+        }
+
+        Box::new(Part {
+            pos,
+            rot,
+            size,
+            color: basecolor,
+            render_data: RenderData {
+                vao,
+                index_count: PART_INDICES_TEX.len() as i32,
+                program_id: shader.program,
+            },
+            texture: Some(texture),
+        })
+    }
 }
 
 impl PartImpl for Part {
@@ -219,79 +290,8 @@ impl Render for Part {
     fn as_any(&self) -> &dyn Any {
         self
     }
-    
+
     fn as_mut_any(&mut self) -> &mut dyn Any {
         self
     }
-}
-
-pub fn gen_part_textured(
-    pos: glm::Vec3,
-    rot: glm::Vec3,
-    size: glm::Vec3,
-    basecolor: glm::Vec3,
-    texture: Texture,
-    shader: &Shader,
-) -> Box<Part> {
-    let (mut vbo, mut ebo) = (0, 0);
-    let mut vao = VertexArrayObject::new();
-
-    unsafe {
-        gl::GenVertexArrays(1, &mut vao.id);
-        gl::GenBuffers(1, &mut vbo);
-        gl::GenBuffers(1, &mut ebo);
-
-        gl::BindVertexArray(vao.id);
-
-        // -------- VBO --------
-        gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
-        gl::BufferData(
-            gl::ARRAY_BUFFER,
-            (PART_VERTICES_TEX.len() * std::mem::size_of::<f32>()) as _,
-            PART_VERTICES_TEX.as_ptr() as *const _,
-            gl::STATIC_DRAW,
-        );
-
-        // -------- EBO --------
-        gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ebo);
-        gl::BufferData(
-            gl::ELEMENT_ARRAY_BUFFER,
-            (PART_INDICES_TEX.len() * std::mem::size_of::<u32>()) as _,
-            PART_INDICES_TEX.as_ptr() as *const _,
-            gl::STATIC_DRAW,
-        );
-
-        // -------- Vertex Attributes --------
-        let stride = 5 * std::mem::size_of::<f32>() as i32;
-
-        // Position (location = 0)
-        gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, stride, std::ptr::null());
-        gl::EnableVertexAttribArray(0);
-
-        // Color (location = 1)
-        gl::VertexAttribPointer(
-            1,
-            2,
-            gl::FLOAT,
-            gl::FALSE,
-            stride,
-            (3 * std::mem::size_of::<f32>()) as *const _,
-        );
-        gl::EnableVertexAttribArray(1);
-
-        gl::BindVertexArray(0);
-    }
-
-    Box::new(Part {
-        pos,
-        rot,
-        size,
-        color: basecolor,
-        render_data: RenderData {
-            vao,
-            index_count: PART_INDICES_TEX.len() as i32,
-            program_id: shader.program,
-        },
-        texture: Some(texture),
-    })
 }

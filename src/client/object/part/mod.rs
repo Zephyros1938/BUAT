@@ -4,10 +4,14 @@ use std::any::Any;
 use gl::{self};
 use nalgebra_glm as glm;
 
-use crate::Render;
+// use crate::Render;
 use crate::graphics::shader::Shader;
 use crate::graphics::texture::Texture;
 use crate::shader::VertexArrayObject;
+
+pub mod consts;
+
+use consts::{PART_INDICES_COLOR, PART_VERTICES_INVERSE, PART_INDICES_TEX, PART_VERTICES_TEX};
 
 pub struct RenderData {
     pub vao: VertexArrayObject,
@@ -23,101 +27,6 @@ pub struct Part {
     pub render_data: RenderData,
     pub texture: Option<Texture>,
 }
-
-fn gen_part_vertices_color(color: glm::Vec3) -> [f32; 48] {
-    [
-        // Back face (z = -0.5)
-        -0.5, -0.5, -0.5, color.x, color.y, color.z, // left,  bottom, back
-        0.5, -0.5, -0.5, color.x, color.y, color.z, // right, bottom, back
-        -0.5, 0.5, -0.5, color.x, color.y, color.z, // left,  top,    back
-        0.5, 0.5, -0.5, color.x, color.y, color.z, // right, top,    back
-        // Front face (z = +0.5)
-        -0.5, -0.5, 0.5, color.x, color.y, color.z, // left,  bottom, front
-        0.5, -0.5, 0.5, color.x, color.y, color.z, // right, bottom, front
-        -0.5, 0.5, 0.5, color.x, color.y, color.z, // left,  top,    front
-        0.5, 0.5, 0.5, color.x, color.y, color.z, // right, top,    front
-    ]
-}
-
-fn gen_inverse_part_vertices_color(color: glm::Vec3) -> [f32; 48] {
-    [
-        -0.5, -0.5, -0.5, color.x, color.y, color.z, // left,  bottom, back
-        00.5, -0.5, -0.5, color.x, color.y, color.z, // right, bottom, back
-        -0.5, -0.5, 00.5, color.x, color.y, color.z, // left,  top,    back
-        00.5, -0.5, 00.5, color.x, color.y, color.z, // right, top,    back
-        -0.5, 00.5, -0.5, color.x, color.y, color.z, // left,  bottom, front
-        00.5, 00.5, -0.5, color.x, color.y, color.z, // right, bottom, front
-        -0.5, 00.5, 00.5, color.x, color.y, color.z, // left,  top,    front
-        00.5, 00.5, 00.5, color.x, color.y, color.z, // right, top,    front
-    ]
-}
-
-const PART_VERTICES: [f32; 8 * 3] = [
-    // Back face (z = -0.5)
-    -0.5, -0.5, -0.5, // left,  bottom, back
-    0.5, -0.5, -0.5, // right, bottom, back
-    -0.5, 0.5, -0.5, // left,  top,    back
-    0.5, 0.5, -0.5, // right, top,    back
-    // Front face (z = +0.5)
-    -0.5, -0.5, 0.5, // left,  bottom, front
-    0.5, -0.5, 0.5, // right, bottom, front
-    -0.5, 0.5, 0.5, // left,  top,    front
-    0.5, 0.5, 0.5, // right, top,    front
-];
-
-const PART_VERTICES_INVERSE: [f32; 8 * 3] = [
-    // Back face (z = -0.5)
-    -0.5, -0.5, -0.5, // left,  bottom, back
-    0.5, -0.5, -0.5, // right, bottom, back
-    -0.5, -0.5, 0.5, // left,  top,    back
-    0.5, -0.5, 0.5, // right, top,    back
-    // Front face (z = +0.5)
-    -0.5, 0.5, -0.5, // left,  bottom, front
-    0.5, 0.5, -0.5, // right, bottom, front
-    -0.5, 0.5, 0.5, // left,  top,    front
-    0.5, 0.5, 0.5, // right, top,    front
-];
-
-const PART_INDICES_COLOR: [u32; 3 * 2 * 6] = [
-    0, 3, 1, 0, 2, 3, // back
-    4, 5, 7, 4, 7, 6, // front
-    4, 2, 0, 4, 6, 2, // left
-    1, 3, 7, 1, 7, 5, // right
-    2, 6, 7, 2, 7, 3, // top
-    0, 1, 5, 0, 5, 4, // bottom
-];
-
-const PART_VERTICES_TEX: [f32; 24 * 5] = [
-    // Back
-    -0.5, -0.5, -0.5, 0.0, 0.0, 0.5, -0.5, -0.5, 1.0, 0.0, 0.5, 0.5, -0.5, 1.0, 1.0, -0.5, 0.5,
-    -0.5, 0.0, 1.0, // Front
-    -0.5, -0.5, 0.5, 0.0, 0.0, 0.5, -0.5, 0.5, 1.0, 0.0, 0.5, 0.5, 0.5, 1.0, 1.0, -0.5, 0.5, 0.5,
-    0.0, 1.0, // Left
-    -0.5, -0.5, 0.5, 0.0, 0.0, -0.5, -0.5, -0.5, 1.0, 0.0, -0.5, 0.5, -0.5, 1.0, 1.0, -0.5, 0.5,
-    0.5, 0.0, 1.0, // Right
-    0.5, -0.5, -0.5, 0.0, 0.0, 0.5, -0.5, 0.5, 1.0, 0.0, 0.5, 0.5, 0.5, 1.0, 1.0, 0.5, 0.5, -0.5,
-    0.0, 1.0, // Top
-    -0.5, 0.5, -0.5, 0.0, 0.0, 0.5, 0.5, -0.5, 1.0, 0.0, 0.5, 0.5, 0.5, 1.0, 1.0, -0.5, 0.5, 0.5,
-    0.0, 1.0, // Bottom
-    -0.5, -0.5, 0.5, 0.0, 0.0, 0.5, -0.5, 0.5, 1.0, 0.0, 0.5, -0.5, -0.5, 1.0, 1.0, -0.5, -0.5,
-    -0.5, 0.0, 1.0,
-];
-const PART_INDICES_TEX: [u32; 36] = [
-    1, 0, 2, 2, 0, 3, // front
-    4, 5, 6, 4, 6, 7, // back
-    9, 8, 10, 10, 8, 11, // left
-    13, 12, 14, 14, 12, 15, // right
-    17, 16, 18, 18, 16, 19, // top
-    21, 20, 22, 22, 20, 23, // bottom
-];
-const PART_INDICES_INVERT_TEX: [u32; 36] = [
-    0, 1, 2, 0, 2, 3, // front
-    5, 4, 6, 6, 4, 7, // back
-    8, 9, 10, 8, 10, 11, // left
-    12, 13, 14, 12, 14, 15, // right
-    16, 17, 18, 16, 18, 19, // top
-    20, 21, 22, 20, 22, 23, // bottom
-];
 
 pub trait PartImpl {
     fn get_model_matrix(&self) -> glm::Mat4 {
@@ -286,28 +195,20 @@ impl PartImpl for Part {
     }
 }
 
-impl Render for Part {
-    fn render(&self, shader: &crate::shader::Shader) {
-        shader.use_program();
-        let model_matrix = self.get_model_matrix();
-        shader.set_mat4("model", &model_matrix).unwrap();
-        self.render_data.vao.bind();
-        unsafe {
-            gl::DrawElements(
-                gl::TRIANGLES,
-                self.render_data.index_count,
-                gl::UNSIGNED_INT,
-                std::ptr::null(),
-            );
-        }
-        self.render_data.vao.unbind();
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn as_mut_any(&mut self) -> &mut dyn Any {
-        self
-    }
-}
+// impl Render for Part {
+//     fn render(&self, shader: &crate::shader::Shader) {
+//         shader.use_program();
+//         let model_matrix = self.get_model_matrix();
+//         shader.set_mat4("model", &model_matrix).unwrap();
+//         self.render_data.vao.bind();
+//         unsafe {
+//             gl::DrawElements(
+//                 gl::TRIANGLES,
+//                 self.render_data.index_count,
+//                 gl::UNSIGNED_INT,
+//                 std::ptr::null(),
+//             );
+//         }
+//         self.render_data.vao.unbind();
+//     }
+// }

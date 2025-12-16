@@ -147,15 +147,6 @@ impl Shader {
         Ok(())
     }
 }
-
-impl Drop for Shader {
-    fn drop(&mut self) {
-        unsafe {
-            gl::DeleteProgram(self.program);
-        }
-    }
-}
-
 pub struct VertexArrayObject {
     pub id: GLuint,
 }
@@ -180,5 +171,17 @@ impl VertexArrayObject {
         unsafe {
             gl::BindVertexArray(0);
         }
+    }
+}
+
+impl Clone for Shader {
+    fn clone(&self) -> Self {
+        Self { program: self.program.clone() }
+    }
+}
+impl Copy for Shader {}
+impl std::fmt::Debug for Shader {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Shader").field("program", &self.program).finish()
     }
 }

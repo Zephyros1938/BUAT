@@ -5,7 +5,13 @@ Not that its bad, just that i want ALL of my code to be efficient, but i think t
 Most comments are from collabs
 */
 
+const MAX_ZOOM: f32 = 145.0;
+const MIN_ZOOM: f32 = 0.01;
+
+use glfw::Key;
 use nalgebra_glm::{Mat4, Vec3};
+
+use crate::graphics::windowing::GameWindow;
 
 pub struct Camera3d {
     pub position: Vec3,
@@ -91,6 +97,10 @@ impl Camera3d {
         self.update_vectors();
     }
 
+    pub fn process_scroll(&mut self, y_offset: f32) {
+        self.zoom = f32::max(f32::min(self.zoom - y_offset, MAX_ZOOM), MIN_ZOOM);
+    }
+
     pub fn update_vectors(&mut self) {
         self.front = get_front(self.yaw, self.pitch);
 
@@ -118,4 +128,50 @@ fn get_front(yaw: f32, pitch: f32) -> Vec3 {
         -yaw_rad.cos() * pitch_rad.cos(), // z
     )
     .normalize()
+}
+
+pub fn debug_camera_movement(cam: &mut Camera3d, game_window: &GameWindow, delta_time: f32) {
+    let mut direction = nalgebra_glm::vec3(0.0, 0.0, 0.0);
+    let key_states = game_window.key_states;
+
+    if key_states[Key::W as usize] {
+        direction += cam.front;
+    }
+    if key_states[Key::S as usize] {
+        direction -= cam.front;
+    }
+    if key_states[Key::A as usize] {
+        direction -= cam.right;
+    }
+    if key_states[Key::D as usize] {
+        direction += cam.right;
+    }
+    if key_states[Key::Space as usize] {
+        direction += cam.up;
+    }
+    if key_states[Key::LeftShift as usize] {
+        direction -= cam.up;
+    }
+    if key_states[Key::Up as usize] {
+        cam.process_mouse(0.0, 1.0 * delta_time * 50.0 / cam.mouse_sensitivity * 2.);
+    }
+    if key_states[Key::Down as usize] {
+        cam.process_mouse(
+            0.0,
+            -1.0 * delta_time * 50.0 / cam.mouse_sensitivity * 2.,
+        );
+    }
+    if key_states[Key::Left as usize] {
+        cam.process_mouse(
+            -1.0 * delta_time * 50.0 / cam.mouse_sensitivity * 2.,
+            0.0,
+        );
+    }
+    if key_states[Key::Right as usize] {
+        cam.process_mouse(1.0 * delta_time * 50.0 / cam.mouse_sensitivity * 2., 0.0);
+    }
+
+    if nalgebra_glm::length(&direction) > 0.0 {
+        cam.position += direction * cam.move_speed * delta_time;
+    }
 }

@@ -9,7 +9,7 @@ const vec3  FOG_COLOR = vec3(0.0, 0.0, 0.0);
 const float FOG_START = 0.0;
 const float FOG_END   = 10.0;
 
-uniform vec3 ourColor;
+uniform vec3 uColor;
 
 void main()
 {
@@ -19,6 +19,6 @@ void main()
         1.0
     );
 
-    vec3 color = mix(FOG_COLOR, ourColor, fogFactor);
+    vec3 color = mix(FOG_COLOR, uColor, fogFactor);
     FragColor = vec4(color, 1.0);
 }

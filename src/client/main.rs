@@ -2,7 +2,7 @@ use glfw::{Action, Context, Key};
 use log::{debug, info};
 use log4rs;
 use mini_redis::client;
-use nalgebra_glm as glm;
+use nalgebra_glm::{self as glm, vec3};
 
 mod ecs;
 mod graphics;
@@ -11,17 +11,15 @@ mod object;
 mod util;
 
 use crate::{
-    ecs::ecs::{Entity, World},
+    ecs::ecs as ECS,
     graphics::{
-        camera::Camera3d,
-        shader,
-        shader::Shader,
-        texture::Texture,
+        camera::{self, Camera3d},
+        shader::{self, Shader},
+        texture::{self, Texture},
         windowing::{self, GameWindow, GameWindowHints},
     },
     input::mousehandler::MouseHandler,
     object::{
-        base::Render,
         mesh_loader::{self, MESH_UV, MESH_VERT},
         part::Part,
     },
@@ -46,15 +44,15 @@ async fn preconnect(uri: &String) {
 // =============================================================
 
 fn spawn_part(
-    world: &mut World,
+    world: &mut ECS::World,
     position: glm::Vec3,
     rotation: glm::Vec3,
     scale: glm::Vec3,
     color: glm::Vec3,
     shader: &Shader,
     texture: Option<Texture>,
-) -> Entity {
-    let entity = world.next_entity_id as Entity;
+) -> ECS::Entity {
+    let entity = world.next_entity_id as ECS::Entity;
     world.next_entity_id += 1;
 
     let part = match texture {
@@ -62,18 +60,19 @@ fn spawn_part(
         None => Part::new(position, rotation, scale, color, shader),
     };
 
-    world.positions.insert(entity, ecs::ecs::Position(position));
-    world.rotations.insert(entity, ecs::ecs::Rotation(rotation));
-    world.scales.insert(entity, ecs::ecs::Scale(scale));
-    world.colors.insert(entity, ecs::ecs::Color(color));
+    world.positions.insert(entity, ECS::Position(position));
+    world.rotations.insert(entity, ECS::Rotation(rotation));
+    world.scales.insert(entity, ECS::Scale(scale));
+    world.colors.insert(entity, ECS::Color(color));
     world.part_render_data.insert(
         entity,
-        ecs::ecs::PartRenderData {
+        ECS::PartRenderData {
             program_id: part.render_data.program_id,
             vao_id: part.render_data.vao.id,
             index_count: part.render_data.index_count,
         },
     );
+    world.shaders.insert(entity, ECS::Shader(*shader));
 
     if let Some(tex) = part.texture {
         world.textures.insert(entity, tex);
@@ -144,6 +143,18 @@ async fn main() {
         "assets/shaders/part_default.frag",
     )
     .unwrap();
+    let shader_tex = shader::Shader::from_files(
+        "assets/shaders/part_tex.vert",
+        "assets/shaders/part_tex.frag",
+    )
+    .unwrap();
+    let texture_test = texture::load_texture_from_file(
+        "assets/material/wood.png",
+        texture::TextureLoadOptions {
+            ..Default::default()
+        },
+    )
+    .unwrap();
 
     // -------------------- Camera Initialization --------------------
     let mut camera = Camera3d::new(
@@ -161,27 +172,17 @@ async fn main() {
     );
 
     // ------------------------- Initialize ECS -------------------------
-    let mut world = World::new();
+    let mut world = ECS::World::new();
 
-    for x in -5..5 {
-        for y in -5..5 {
-            for z in -5..5 {
-                spawn_part(
-                    &mut world,
-                    glm::vec3(x as f32 * 2.5, y as f32 * 2.5, z as f32 * 2.5),
-                    glm::vec3(0.0, 0.0, 0.0),
-                    glm::vec3(1.0, 1.0, 1.0),
-                    glm::vec3(
-                        (x + 5) as f32 / 10.0,
-                        (y + 5) as f32 / 10.0,
-                        (z + 5) as f32 / 10.0,
-                    ),
-                    &shader_norm,
-                    None,
-                );
-            }
-        }
-    }
+    spawn_part(
+        &mut world,
+        glm::vec3(0., 0., 0.),
+        glm::vec3(0.0, 0.0, 0.0),
+        glm::vec3(5.0, 5.0, 5.0),
+        glm::vec3(1., 0., 0.),
+        &shader_tex,
+        Some(texture_test),
+    );
 
     // =============================================================
     // ========================= Main Loop =========================
@@ -193,8 +194,10 @@ async fn main() {
     debug!("Starting main loop...");
 
     // ----------------------- Main Loop -----------------------
+    let mut total_time = 0.0;
     while !game_window.win.should_close() {
         let delta_time = game_window.tick();
+        total_time += delta_time;
         game_window.glfw.poll_events();
 
         // ------------------------ Input -------------------------
@@ -235,54 +238,17 @@ async fn main() {
                         camera.process_mouse(x, y)
                     };
                 }
+                glfw::WindowEvent::Scroll(xpos, ypos) => {
+                    if mousehandler.locked {
+                        camera.process_scroll(ypos as f32);
+                    }
+                }
 
                 _ => {}
             }
         }
 
-        let mut direction = glm::vec3(0.0, 0.0, 0.0);
-        let key_states = game_window.key_states;
-
-        if key_states[Key::W as usize] {
-            direction += camera.front;
-        }
-        if key_states[Key::S as usize] {
-            direction -= camera.front;
-        }
-        if key_states[Key::A as usize] {
-            direction -= camera.right;
-        }
-        if key_states[Key::D as usize] {
-            direction += camera.right;
-        }
-        if key_states[Key::Space as usize] {
-            direction += camera.up;
-        }
-        if key_states[Key::LeftShift as usize] {
-            direction -= camera.up;
-        }
-        if key_states[Key::Up as usize] {
-            camera.process_mouse(0.0, 1.0 * delta_time * 50.0 / camera.mouse_sensitivity * 2.);
-        }
-        if key_states[Key::Down as usize] {
-            camera.process_mouse(
-                0.0,
-                -1.0 * delta_time * 50.0 / camera.mouse_sensitivity * 2.,
-            );
-        }
-        if key_states[Key::Left as usize] {
-            camera.process_mouse(
-                -1.0 * delta_time * 50.0 / camera.mouse_sensitivity * 2.,
-                0.0,
-            );
-        }
-        if key_states[Key::Right as usize] {
-            camera.process_mouse(1.0 * delta_time * 50.0 / camera.mouse_sensitivity * 2., 0.0);
-        }
-
-        if glm::length(&direction) > 0.0 {
-            camera.position += direction * camera.move_speed * delta_time;
-        }
+        camera::debug_camera_movement(&mut camera, &game_window, delta_time);
 
         // ----------------------- ECS Update Systems -----------------------
         // test rotation system
@@ -299,44 +265,53 @@ async fn main() {
             let projection = camera.get_projection_matrix();
 
             for (&entity, render_data) in &world.part_render_data {
-                gl::UseProgram(render_data.program_id);
-
                 // Determine shader based on entity
-                #[allow(unused_mut)]
-                let mut target_shader = &shader_norm;
+                if let Some(c) = world.shaders.get(&entity) {
+                    let target_shader = c.0;
 
-                target_shader.use_program();
-                target_shader.set_mat4("view", &view).unwrap();
-                target_shader.set_mat4("projection", &projection).unwrap();
+                    // Matrix construction
+                    let pos = world.positions.get(&entity).unwrap();
+                    let rot = world.rotations.get(&entity).unwrap();
+                    let scale = world.scales.get(&entity).unwrap();
+                    let rot_x = glm::rotation(rot.0.x, &glm::Vec3::new(1.0, 0.0, 0.0));
+                    let rot_y = glm::rotation(rot.0.y, &glm::Vec3::new(0.0, 1.0, 0.0));
+                    let rot_z = glm::rotation(rot.0.z, &glm::Vec3::new(0.0, 0.0, 1.0));
+                    let rotation_matrix = rot_y * rot_x * rot_z;
+                    let model = glm::translate(&glm::identity(), &pos.0)
+                        * rotation_matrix
+                        * glm::scaling(&scale.0);
 
-                let pos = world.positions.get(&entity).unwrap();
-                let rot = world.rotations.get(&entity).unwrap();
-                let scale = world.scales.get(&entity).unwrap();
-                let rot_x = glm::rotation(rot.0.x, &glm::Vec3::new(1.0, 0.0, 0.0));
-                let rot_y = glm::rotation(rot.0.y, &glm::Vec3::new(0.0, 1.0, 0.0));
-                let rot_z = glm::rotation(rot.0.z, &glm::Vec3::new(0.0, 0.0, 1.0));
-                let rotation_matrix = rot_y * rot_x * rot_z;
-                let model = glm::translate(&glm::identity(), &pos.0)
-                    * rotation_matrix
-                    * glm::scaling(&scale.0);
+                    // GL calls
+                    gl::UseProgram(render_data.program_id);
+                    target_shader.use_program();
+                    target_shader.set_mat4("view", &view).unwrap();
+                    target_shader.set_mat4("projection", &projection).unwrap();
+                    target_shader.set_mat4("model", &model).unwrap();
+                    target_shader
+                        .set_vec3("uColor", &world.colors.get(&entity).unwrap().0)
+                        .unwrap();
+                    (world.colors.get_mut(&entity).unwrap()).0 = glm::Vec3::new(
+                        total_time % 1.0,
+                        (total_time + 0.33) % 1.0,
+                        (total_time + 0.66) % 1.0,
+                    );
 
-                target_shader.set_mat4("model", &model).unwrap();
-                target_shader
-                    .set_vec3("ourColor", &world.colors.get(&entity).unwrap().0)
-                    .unwrap();
-
-                gl::BindVertexArray(render_data.vao_id);
-                gl::DrawElements(
-                    gl::TRIANGLES,
-                    render_data.index_count,
-                    gl::UNSIGNED_INT,
-                    std::ptr::null(),
-                );
+                    if let Some(t) = world.textures.get(&entity) {
+                        // If there's a texture then apply it
+                        t.bind(0);
+                    }
+                    gl::BindVertexArray(render_data.vao_id);
+                    gl::DrawElements(
+                        gl::TRIANGLES,
+                        render_data.index_count,
+                        gl::UNSIGNED_INT,
+                        std::ptr::null(),
+                    );
+                }
             }
         }
 
         game_window.win.swap_buffers();
-        println!("{}", 1.0/delta_time);
     }
     debug!("Closed")
 }

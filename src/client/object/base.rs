@@ -1,36 +1,32 @@
-use std::any::Any;
-use std::collections::HashMap;
+// use std::any::Any;
+// use std::collections::HashMap;
 
-pub struct Registry {
-    pub objects: Vec<Box<dyn Render>>
-}
+// pub struct Registry {
+//     pub objects: Vec<Box<dyn Render>>
+// }
 
-impl Registry {
-    pub fn new(objects: Vec<Box<dyn Render>>) -> Registry {
-        return Registry {
-            objects
-        }
-    }
+// impl Registry {
+//     pub fn new(objects: Vec<Box<dyn Render>>) -> Registry {
+//         return Registry {
+//             objects
+//         }
+//     }
 
-    pub fn add(&mut self, obj: Box<dyn Render>) {
-        self.objects.push(obj);
-    }
+//     pub fn add(&mut self, obj: Box<dyn Render>) {
+//         self.objects.push(obj);
+//     }
 
-    pub fn get(&self, key: usize) -> &Box<dyn Render> {
-        return &self.objects[key]; 
-    }
+//     pub fn get(&self, key: usize) -> &Box<dyn Render> {
+//         return &self.objects[key]; 
+//     }
 
-    pub fn op<T: 'static>(&mut self, key: usize, operation: fn(&mut T) -> ()) {
-        if let Some(o) = self.objects[key].as_mut_any().downcast_mut::<T>() {
-            operation(o);
-        }
-    }
-}
+//     pub fn op<T: 'static>(&mut self, key: usize, operation: fn(&mut T) -> ()) {
+//         if let Some(o) = self.objects[key].as_mut_any().downcast_mut::<T>() {
+//             operation(o);
+//         }
+//     }
+// }
 
-pub trait Render {
-    fn render(&self, shader: &crate::shader::Shader);
-
-    fn as_any(&self) -> &dyn Any;
-
-    fn as_mut_any(&mut self) -> &mut dyn Any;
-}
+// pub trait Render {
+//     fn render(&self, shader: &crate::shader::Shader);
+// }

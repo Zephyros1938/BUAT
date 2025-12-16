@@ -2,7 +2,8 @@ pub struct MouseHandler {
     last_x: f32,
     last_y: f32,
     first_mouse: bool,
-    pub locked: bool
+    pub locked: bool,
+    sy: f32,
 }
 
 impl MouseHandler {
@@ -11,7 +12,8 @@ impl MouseHandler {
             last_x: width as f32 / 2.0,
             last_y: height as f32 / 2.0,
             first_mouse: true,
-            locked: true
+            locked: true,
+            sy: 0.,
         }
     }
 

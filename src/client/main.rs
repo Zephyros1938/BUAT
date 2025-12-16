@@ -11,6 +11,7 @@ mod graphics;
 mod input;
 mod object;
 mod util;
+mod ecs;
 
 use crate::{
     graphics::shader::Shader,
@@ -290,6 +291,7 @@ async fn main() {
 
                     if let Some(t) = &p.texture {
                         t.bind(0);
+                        
                         shader_tex.set_int("uTexture", 0).unwrap(); // bind sampler to GL_TEXTURE0
                         target_shader = &shader_tex;
                     } else {

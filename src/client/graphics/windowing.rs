@@ -144,6 +144,13 @@ impl GameWindow {
         }
         Ok(())
     }
+
+    pub fn get_key_pressed(&self, key: glfw::Key) -> bool {
+        if (key as usize) < KEY_COUNT {
+            return self.key_states[key as usize];
+        }
+        false
+    }
 }
 
 pub struct GameWindowHints<'a> {

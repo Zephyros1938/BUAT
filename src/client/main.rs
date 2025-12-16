@@ -28,7 +28,7 @@ use {
         windowing::{self, GameWindow, GameWindowHints},
     },
     input::mousehandler::MouseHandler,
-    object::{base::Render, mesh_loader, part, part::Part},
+    object::{base::{Registry, Render}, mesh_loader, part, part::Part},
 };
 
 // =============================================================
@@ -140,7 +140,7 @@ async fn main() {
 
     // Test objects (will be removed later)
     #[allow(unused_mut)]
-    let mut objects: Vec<Box<dyn Render>> = vec![
+    let mut reg: Registry = Registry::new(vec![
         Part::new(
             glm::vec3(0.0, 0.0, 0.0),
             glm::vec3(45.0, 0.0, 0.0),
@@ -163,7 +163,7 @@ async fn main() {
             texture_test,
             &shader_tex,
         ),
-    ];
+    ]);
 
     // =============================================================
     // ========================= Main Loop =========================
@@ -270,9 +270,9 @@ async fn main() {
         }
 
         // ---------------------- User Script ----------------------
-        if let Some(p) = objects[0].as_mut_any().downcast_mut::<Part>() {
+        reg.op::<Part>(0, |p| {
             Part::rotate(p, glm::Vec3::new(0.25, 0.7, 0.33));
-        }
+        });
 
         // ----------------------- Rendering -----------------------
         unsafe {
@@ -284,7 +284,7 @@ async fn main() {
 
             let mut target_shader = &shader_norm;
 
-            for obj in &objects {
+            for obj in &reg.objects {
                 if let Some(p) = obj.as_any().downcast_ref::<Part>() {
                     gl::UseProgram(p.render_data.program_id);
 

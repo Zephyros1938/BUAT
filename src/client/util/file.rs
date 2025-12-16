@@ -1,4 +1,4 @@
-use std::ffi::{CString, CStr};
+use std::ffi::{CString};
 use std::fs;
 
 ///Fails if interior NULs exist inside the file since CStr/CString is NUL terminated

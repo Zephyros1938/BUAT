@@ -1,35 +1,30 @@
-use std::env;
-use std::process::exit;
-
 use glfw::{Action, Context, Key};
 use log::{debug, info};
 use log4rs;
 use mini_redis::client;
 use nalgebra_glm as glm;
 
+mod ecs;
 mod graphics;
 mod input;
 mod object;
 mod util;
-mod ecs;
 
 use crate::{
-    graphics::shader::Shader,
-    object::{
-        mesh_loader::{MESH_UV, MESH_VERT},
-        part::PartImpl,
-    },
-};
-
-use {
+    ecs::ecs::{Entity, World},
     graphics::{
         camera::Camera3d,
         shader,
-        texture::{Texture, TextureLoadOptions, load_texture_from_file},
+        shader::Shader,
+        texture::Texture,
         windowing::{self, GameWindow, GameWindowHints},
     },
     input::mousehandler::MouseHandler,
-    object::{base::{Registry, Render}, mesh_loader, part, part::Part},
+    object::{
+        base::Render,
+        mesh_loader::{self, MESH_UV, MESH_VERT},
+        part::Part,
+    },
 };
 
 // =============================================================
@@ -42,8 +37,49 @@ async fn preconnect(uri: &String) {
         println!("Server pinged. Result: {:?}", result);
     } else {
         println!("Can't connect to server!");
-        exit(1);
+        std::process::exit(1);
     }
+}
+
+// =============================================================
+// ========================  Functions  ========================
+// =============================================================
+
+fn spawn_part(
+    world: &mut World,
+    position: glm::Vec3,
+    rotation: glm::Vec3,
+    scale: glm::Vec3,
+    color: glm::Vec3,
+    shader: &Shader,
+    texture: Option<Texture>,
+) -> Entity {
+    let entity = world.next_entity_id as Entity;
+    world.next_entity_id += 1;
+
+    let part = match texture {
+        Some(tex) => Part::gen_part_textured(position, rotation, scale, color, tex, shader),
+        None => Part::new(position, rotation, scale, color, shader),
+    };
+
+    world.positions.insert(entity, ecs::ecs::Position(position));
+    world.rotations.insert(entity, ecs::ecs::Rotation(rotation));
+    world.scales.insert(entity, ecs::ecs::Scale(scale));
+    world.colors.insert(entity, ecs::ecs::Color(color));
+    world.part_render_data.insert(
+        entity,
+        ecs::ecs::PartRenderData {
+            program_id: part.render_data.program_id,
+            vao_id: part.render_data.vao.id,
+            index_count: part.render_data.index_count,
+        },
+    );
+
+    if let Some(tex) = part.texture {
+        world.textures.insert(entity, tex);
+    }
+
+    entity
 }
 
 // =============================================================
@@ -63,13 +99,13 @@ async fn main() {
     );
 
     // -------------------- Connect to Server --------------------
-    let env_args: Vec<String> = env::args().collect();
+    let env_args: Vec<String> = std::env::args().collect();
     debug!("Client args: {:?}", env_args);
 
     let uri_default: String = String::from("127.0.0.1:6700");
     let uri: String = env_args.get(2).unwrap_or(&uri_default).to_string();
 
-    let sid: u64 = env_args
+    let _sid: u64 = env_args
         .get(1)
         .expect("No ID specified!")
         .parse::<u64>()
@@ -108,21 +144,6 @@ async fn main() {
         "assets/shaders/part_default.frag",
     )
     .unwrap();
-    let shader_tex = shader::Shader::from_files(
-        "assets/shaders/part_textured.vert",
-        "assets/shaders/part_textured.frag",
-    )
-    .unwrap();
-    let texture_test = load_texture_from_file(
-        "assets/opl_icon.png",
-        TextureLoadOptions {
-            generate_mipmaps: true,
-            min_filter: gl::NEAREST as i32,
-            mag_filter: gl::NEAREST as i32,
-            ..Default::default()
-        },
-    )
-    .unwrap();
 
     // -------------------- Camera Initialization --------------------
     let mut camera = Camera3d::new(
@@ -139,32 +160,28 @@ async fn main() {
         100.0,
     );
 
-    // Test objects (will be removed later)
-    #[allow(unused_mut)]
-    let mut reg: Registry = Registry::new(vec![
-        Part::new(
-            glm::vec3(0.0, 0.0, 0.0),
-            glm::vec3(45.0, 0.0, 0.0),
-            glm::vec3(1.0, 1.0, 1.0),
-            glm::vec3(1.0, 0.5, 0.31),
-            &shader_norm,
-        ),
-        Part::new(
-            glm::vec3(2.0, 0.0, 0.0),
-            glm::vec3(0.0, 0.0, 0.0),
-            glm::vec3(1.0, 1.0, 1.0),
-            glm::vec3(1.0, 0.5, 0.31),
-            &shader_norm,
-        ),
-        Part::gen_part_textured(
-            glm::vec3(-2.0, 0.0, 0.0),
-            glm::vec3(0.0, 0.0, 0.0),
-            glm::vec3(1.0, 1.0, 1.0),
-            glm::vec3(1.0, 0.5, 0.31),
-            texture_test,
-            &shader_tex,
-        ),
-    ]);
+    // ------------------------- Initialize ECS -------------------------
+    let mut world = World::new();
+
+    for x in -5..5 {
+        for y in -5..5 {
+            for z in -5..5 {
+                spawn_part(
+                    &mut world,
+                    glm::vec3(x as f32 * 2.5, y as f32 * 2.5, z as f32 * 2.5),
+                    glm::vec3(0.0, 0.0, 0.0),
+                    glm::vec3(1.0, 1.0, 1.0),
+                    glm::vec3(
+                        (x + 5) as f32 / 10.0,
+                        (y + 5) as f32 / 10.0,
+                        (z + 5) as f32 / 10.0,
+                    ),
+                    &shader_norm,
+                    None,
+                );
+            }
+        }
+    }
 
     // =============================================================
     // ========================= Main Loop =========================
@@ -175,10 +192,9 @@ async fn main() {
 
     debug!("Starting main loop...");
 
+    // ----------------------- Main Loop -----------------------
     while !game_window.win.should_close() {
-        // ----- DELTA TIME -----
         let delta_time = game_window.tick();
-
         game_window.glfw.poll_events();
 
         // ------------------------ Input -------------------------
@@ -224,8 +240,6 @@ async fn main() {
             }
         }
 
-        // Poll KEY_STATES for smooth movement (dont put in the thingy above)
-
         let mut direction = glm::vec3(0.0, 0.0, 0.0);
         let key_states = game_window.key_states;
 
@@ -270,12 +284,13 @@ async fn main() {
             camera.position += direction * camera.move_speed * delta_time;
         }
 
-        // ---------------------- User Script ----------------------
-        reg.op::<Part>(0, |p| {
-            Part::rotate(p, glm::Vec3::new(0.25, 0.7, 0.33));
-        });
+        // ----------------------- ECS Update Systems -----------------------
+        // test rotation system
+        for (&_, rotation) in &mut world.rotations {
+            rotation.0 += glm::vec3(0.25, 0.7, 0.33) * delta_time;
+        }
 
-        // ----------------------- Rendering -----------------------
+        // ----------------------- Rendering System -----------------------
         unsafe {
             gl::ClearColor(0.2, 0.3, 0.3, 1.0);
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT | gl::STENCIL_BUFFER_BIT);
@@ -283,29 +298,45 @@ async fn main() {
             let view = camera.get_view_matrix();
             let projection = camera.get_projection_matrix();
 
-            let mut target_shader = &shader_norm;
+            for (&entity, render_data) in &world.part_render_data {
+                gl::UseProgram(render_data.program_id);
 
-            for obj in &reg.objects {
-                if let Some(p) = obj.as_any().downcast_ref::<Part>() {
-                    gl::UseProgram(p.render_data.program_id);
+                // Determine shader based on entity
+                #[allow(unused_mut)]
+                let mut target_shader = &shader_norm;
 
-                    if let Some(t) = &p.texture {
-                        t.bind(0);
-                        
-                        shader_tex.set_int("uTexture", 0).unwrap(); // bind sampler to GL_TEXTURE0
-                        target_shader = &shader_tex;
-                    } else {
-                        target_shader = &shader_norm;
-                    }
-                    target_shader.use_program();
-                    target_shader.set_mat4("view", &view).unwrap();
-                    target_shader.set_mat4("projection", &projection).unwrap();
-                    obj.render(&target_shader);
-                }
+                target_shader.use_program();
+                target_shader.set_mat4("view", &view).unwrap();
+                target_shader.set_mat4("projection", &projection).unwrap();
+
+                let pos = world.positions.get(&entity).unwrap();
+                let rot = world.rotations.get(&entity).unwrap();
+                let scale = world.scales.get(&entity).unwrap();
+                let rot_x = glm::rotation(rot.0.x, &glm::Vec3::new(1.0, 0.0, 0.0));
+                let rot_y = glm::rotation(rot.0.y, &glm::Vec3::new(0.0, 1.0, 0.0));
+                let rot_z = glm::rotation(rot.0.z, &glm::Vec3::new(0.0, 0.0, 1.0));
+                let rotation_matrix = rot_y * rot_x * rot_z;
+                let model = glm::translate(&glm::identity(), &pos.0)
+                    * rotation_matrix
+                    * glm::scaling(&scale.0);
+
+                target_shader.set_mat4("model", &model).unwrap();
+                target_shader
+                    .set_vec3("ourColor", &world.colors.get(&entity).unwrap().0)
+                    .unwrap();
+
+                gl::BindVertexArray(render_data.vao_id);
+                gl::DrawElements(
+                    gl::TRIANGLES,
+                    render_data.index_count,
+                    gl::UNSIGNED_INT,
+                    std::ptr::null(),
+                );
             }
         }
 
         game_window.win.swap_buffers();
+        println!("{}", 1.0/delta_time);
     }
     debug!("Closed")
 }

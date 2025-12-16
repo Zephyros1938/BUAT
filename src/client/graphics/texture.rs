@@ -17,6 +17,18 @@ impl Texture {
     }
 }
 
+impl Clone for Texture {
+    fn clone(&self) -> Self {
+        Texture {
+            id: self.id,
+            width: self.width,
+            height: self.height,
+        }
+    }
+}
+
+impl Copy for Texture {}
+
 pub struct TextureLoadOptions {
     pub generate_mipmaps: bool,
     pub wrap_s: GLint,

@@ -1,6 +1,5 @@
 #version 330 core
 
-in vec3 ourColor;
 in float fragDistance;
 
 out vec4 FragColor;
@@ -8,7 +7,9 @@ out vec4 FragColor;
 /* Fog constants */
 const vec3  FOG_COLOR = vec3(0.0, 0.0, 0.0);
 const float FOG_START = 0.0;
-const float FOG_END   = 5.0;
+const float FOG_END   = 10.0;
+
+uniform vec3 ourColor;
 
 void main()
 {

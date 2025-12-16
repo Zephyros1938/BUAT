@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use std::any::Any;
 
 use gl::{self};
@@ -50,6 +51,33 @@ fn gen_inverse_part_vertices_color(color: glm::Vec3) -> [f32; 48] {
         00.5, 00.5, 00.5, color.x, color.y, color.z, // right, top,    front
     ]
 }
+
+const PART_VERTICES: [f32; 8 * 3] = [
+    // Back face (z = -0.5)
+    -0.5, -0.5, -0.5, // left,  bottom, back
+    0.5, -0.5, -0.5, // right, bottom, back
+    -0.5, 0.5, -0.5, // left,  top,    back
+    0.5, 0.5, -0.5, // right, top,    back
+    // Front face (z = +0.5)
+    -0.5, -0.5, 0.5, // left,  bottom, front
+    0.5, -0.5, 0.5, // right, bottom, front
+    -0.5, 0.5, 0.5, // left,  top,    front
+    0.5, 0.5, 0.5, // right, top,    front
+];
+
+const PART_VERTICES_INVERSE: [f32; 8 * 3] = [
+    // Back face (z = -0.5)
+    -0.5, -0.5, -0.5, // left,  bottom, back
+    0.5, -0.5, -0.5, // right, bottom, back
+    -0.5, -0.5, 0.5, // left,  top,    back
+    0.5, -0.5, 0.5, // right, top,    back
+    // Front face (z = +0.5)
+    -0.5, 0.5, -0.5, // left,  bottom, front
+    0.5, 0.5, -0.5, // right, bottom, front
+    -0.5, 0.5, 0.5, // left,  top,    front
+    0.5, 0.5, 0.5, // right, top,    front
+];
+
 const PART_INDICES_COLOR: [u32; 3 * 2 * 6] = [
     0, 3, 1, 0, 2, 3, // back
     4, 5, 7, 4, 7, 6, // front
@@ -108,7 +136,6 @@ impl Part {
         color: glm::Vec3,
         shader: &Shader,
     ) -> Box<Part> {
-        let vertices: [f32; 48] = gen_part_vertices_color(color);
 
         let (mut vbo, mut ebo) = (0, 0);
         let mut vao = VertexArrayObject::new();
@@ -124,8 +151,8 @@ impl Part {
             gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
             gl::BufferData(
                 gl::ARRAY_BUFFER,
-                (vertices.len() * std::mem::size_of::<f32>()) as _,
-                vertices.as_ptr() as *const _,
+                (PART_VERTICES_INVERSE.len() * std::mem::size_of::<f32>()) as _,
+                PART_VERTICES_INVERSE.as_ptr() as *const _,
                 gl::STATIC_DRAW,
             );
 
@@ -139,22 +166,11 @@ impl Part {
             );
 
             // -------- Vertex Attributes --------
-            let stride = 6 * std::mem::size_of::<f32>() as i32;
+            let stride = 3 * std::mem::size_of::<f32>() as i32;
 
             // Position (location = 0)
             gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, stride, std::ptr::null());
             gl::EnableVertexAttribArray(0);
-
-            // Color (location = 1)
-            gl::VertexAttribPointer(
-                1,
-                3,
-                gl::FLOAT,
-                gl::FALSE,
-                stride,
-                (3 * std::mem::size_of::<f32>()) as *const _,
-            );
-            gl::EnableVertexAttribArray(1);
 
             gl::BindVertexArray(0);
         }

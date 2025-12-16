@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
 use nalgebra_glm as glm;
+
+use crate::graphics::texture::Texture;
 pub type Entity = usize;
 
 // Components
@@ -24,13 +26,14 @@ pub struct PartRenderData {
 // World
 
 pub struct World {
-    next_entity_id: u64,
+    pub next_entity_id: u64,
     pub positions: HashMap<Entity, Position>,
     pub rotations: HashMap<Entity, Rotation>,
     pub scales: HashMap<Entity, Scale>,
     pub velocities: HashMap<Entity, Velocity>,
     pub colors: HashMap<Entity, Color>,
     pub part_render_data: HashMap<Entity, PartRenderData>,
+    pub textures: HashMap<Entity, Texture>,
 }
 
 impl World {
@@ -43,6 +46,7 @@ impl World {
             velocities: HashMap::new(),
             colors: HashMap::new(),
             part_render_data: HashMap::new(),
+            textures: HashMap::new(),
         }
     }
 }

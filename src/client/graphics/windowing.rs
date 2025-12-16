@@ -5,7 +5,7 @@ pub const KEY_COUNT: usize = 1024;
 
 fn check_hyprland() -> bool {
     use regex::Regex;
-    use std::process::{Command, Stdio};
+    use std::process::Command;
     let out = Command::new("sh")
         .arg("-c") // The '-c' flag tells the shell to read the command from the next string
         .arg("ps aux | grep hyprland | grep -v grep") // The actual shell command
@@ -109,6 +109,7 @@ impl GameWindow {
         self.dt
     }
 
+    #[allow(dead_code)]
     pub fn fullscreen(&mut self) -> Result<(), String> {
         if check_hyprland() {
             return Err("Hyprland dissallows full screen".to_owned());

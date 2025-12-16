@@ -2,7 +2,9 @@ use glfw::{Action, Context, Key};
 use log::{debug, info};
 use log4rs;
 use mini_redis::client;
-use nalgebra_glm::{self as glm, vec3};
+use mini_redis::{Connection, Frame}; // <-- ADD Frame and Connection
+use tokio::net::TcpStream; // <-- ADD TcpStream
+use nalgebra_glm::{self as glm};
 
 mod ecs;
 mod graphics;
@@ -178,10 +180,11 @@ async fn main() {
         &mut world,
         glm::vec3(0., 0., 0.),
         glm::vec3(0.0, 0.0, 0.0),
-        glm::vec3(5.0, 5.0, 5.0),
+        glm::vec3(10.0, 10.0, 10.0),
         glm::vec3(1., 0., 0.),
-        &shader_tex,
-        Some(texture_test),
+        &shader_norm,
+        // Some(texture_test),
+        None
     );
 
     // =============================================================
@@ -290,14 +293,9 @@ async fn main() {
                     target_shader
                         .set_vec3("uColor", &world.colors.get(&entity).unwrap().0)
                         .unwrap();
-                    (world.colors.get_mut(&entity).unwrap()).0 = glm::Vec3::new(
-                        total_time % 1.0,
-                        (total_time + 0.33) % 1.0,
-                        (total_time + 0.66) % 1.0,
-                    );
 
                     if let Some(t) = world.textures.get(&entity) {
-                        // If there's a texture then apply it
+                        // If there's a texture then apply it (should probably make this so it knows which units to apply, but that will be for later.)
                         t.bind(0);
                     }
                     gl::BindVertexArray(render_data.vao_id);

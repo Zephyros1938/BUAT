@@ -46,7 +46,6 @@ async fn preconnect(uri: &String) {
 async fn main() {
     // ------------------------ Logging -------------------------
     log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
-    let _x = mesh_loader::load_vertices_from_obj("assets/voidstar.obj", MESH_ALL).unwrap();
     // info!("{:?}", _x);
 
     debug!(
@@ -93,6 +92,7 @@ async fn main() {
         gl::CullFace(gl::BACK); // Cull back-facing polygons
         gl::FrontFace(gl::CCW); // Counter-clockwise winding = front face
     }
+    let _x = mesh_loader::load_vertices_from_obj("assets/voidstar.obj", MESH_ALL).unwrap();
 
     // ------------------------ Shaders --------------------------
     let shader_norm = shader::Shader::from_files(

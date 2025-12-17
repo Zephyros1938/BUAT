@@ -1,8 +1,8 @@
 use glfw::{Action, Context, Key};
-use log::{debug};
+use log::debug;
 use log4rs;
 use mini_redis::client;
-use nalgebra_glm::{self as glm};
+use nalgebra_glm::{self as glm, Vec3};
 
 mod ecs;
 mod graphics;
@@ -12,7 +12,7 @@ mod util;
 
 use crate::{
     ecs::{
-        ecs as ECS,
+        ecs::{self as ECS, Position},
         funcs::{add_render_data_to_world, spawn_part},
     },
     graphics::{
@@ -141,7 +141,7 @@ async fn main() {
             glm::vec3(0., 0., 0.),
             glm::vec3(0.0, 0.0, 0.0),
             glm::vec3(1.0, 1.0, 1.0),
-            glm::vec3(0.7, 0.7, 0.7),
+            glm::vec3(1.0, 0.0, 0.0),
             &_z,
             &shader_mesh,
             None,
@@ -153,7 +153,7 @@ async fn main() {
         glm::vec3(0., 0., 0.),
         glm::vec3(0.0, 0.0, 0.0),
         glm::vec3(1.0, 1.0, 1.0),
-        glm::vec3(0.7, 0.7, 0.7),
+        glm::vec3(1.0,0.0,1.0),
         &shader_norm,
         // Some(texture_test),
         None,
@@ -233,11 +233,20 @@ async fn main() {
 
         // ----------------------- Rendering System -----------------------
         unsafe {
-            gl::ClearColor(0.2, 0.3, 0.3, 1.0);
+            gl::ClearColor(0.05,0.05,0.05, 1.0);
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT | gl::STENCIL_BUFFER_BIT);
 
             let view = camera.get_view_matrix();
             let projection = camera.get_projection_matrix();
+
+            world.positions.insert(
+                1,
+                Position(camera.position + Vec3::new(
+                    25. * f32::sin(total_time),
+                    0.,
+                    25. * f32::cos(total_time),
+                )),
+            );
 
             for (&entity, render_data) in &world.part_render_data {
                 // Determine shader based on entity
@@ -266,6 +275,18 @@ async fn main() {
                         .set_vec3("uColor", &world.colors.get(&entity).unwrap().0)
                         .unwrap();
                     target_shader.set_vec3("viewPos", &camera.position).unwrap();
+                    target_shader
+                        .set_vec3(
+                            "lightPos",
+                            &(world.positions.get(&1).unwrap().0),
+                        )
+                        .unwrap();
+                    target_shader
+                        .set_vec3(
+                            "lightColor",
+                            &(world.colors.get(&1).unwrap().0),
+                        )
+                        .unwrap();
 
                     if let Some(t) = world.textures.get(&entity) {
                         // If there's a texture then apply it (should probably make this so it knows which units to apply, but that will be for later.)

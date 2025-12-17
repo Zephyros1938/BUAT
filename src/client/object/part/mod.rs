@@ -5,7 +5,7 @@ use gl::{self};
 use nalgebra_glm as glm;
 
 // use crate::Render;
-use crate::graphics::shader::Shader;
+use crate::{graphics::shader::Shader, object::part::consts::PART_VERTICES};
 use crate::graphics::texture::Texture;
 use crate::shader::VertexArrayObject;
 
@@ -53,8 +53,8 @@ impl Part {
             gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
             gl::BufferData(
                 gl::ARRAY_BUFFER,
-                (PART_VERTICES_INVERSE.len() * std::mem::size_of::<f32>()) as _,
-                PART_VERTICES_INVERSE.as_ptr() as *const _,
+                (PART_VERTICES.len() * std::mem::size_of::<f32>()) as _,
+                PART_VERTICES.as_ptr() as *const _,
                 gl::STATIC_DRAW,
             );
 

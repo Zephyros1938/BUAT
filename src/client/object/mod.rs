@@ -1,3 +1,3 @@
 pub mod base;
-pub mod mesh_loader;
+pub mod mesh;
 pub mod part;

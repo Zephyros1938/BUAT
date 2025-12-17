@@ -1,5 +1,5 @@
 use glfw::{Action, Context, Key};
-use log::{debug, info};
+use log::{debug};
 use log4rs;
 use mini_redis::client;
 use nalgebra_glm::{self as glm};
@@ -11,17 +11,17 @@ mod object;
 mod util;
 
 use crate::{
-    ecs::{ecs as ECS, funcs::spawn_part},
+    ecs::{
+        ecs as ECS,
+        funcs::{add_render_data_to_world, spawn_part},
+    },
     graphics::{
         camera::{self, Camera3d},
         shader, texture,
         windowing::{self, GameWindow, GameWindowHints},
     },
     input::mousehandler::MouseHandler,
-    object::{
-        mesh_loader::{self, MESH_ALL, MESH_COLOR, MESH_INDICE, MESH_UV, MESH_VERT},
-        part::Part,
-    },
+    object::{mesh::obj_loader::load_obj_to_render_data, part::Part},
 };
 
 // =============================================================
@@ -92,7 +92,6 @@ async fn main() {
         gl::CullFace(gl::BACK); // Cull back-facing polygons
         gl::FrontFace(gl::CCW); // Counter-clockwise winding = front face
     }
-    let _x = mesh_loader::load_vertices_from_obj("assets/voidstar.obj", MESH_ALL).unwrap();
 
     // ------------------------ Shaders --------------------------
     let shader_norm = shader::Shader::from_files(
@@ -103,6 +102,11 @@ async fn main() {
     let shader_tex = shader::Shader::from_files(
         "assets/shaders/part_tex.vert",
         "assets/shaders/part_tex.frag",
+    )
+    .unwrap();
+    let shader_mesh = shader::Shader::from_files(
+        "assets/shaders/mesh_default.vert",
+        "assets/shaders/mesh_default.frag",
     )
     .unwrap();
     let texture_test = texture::load_texture_from_file(
@@ -130,13 +134,26 @@ async fn main() {
 
     // ------------------------- Initialize ECS -------------------------
     let mut world = ECS::World::new();
+    let _y = load_obj_to_render_data("assets/voidstar.obj", true, true).unwrap();
+    for _z in _y {
+        add_render_data_to_world(
+            &mut world,
+            glm::vec3(0., 0., 0.),
+            glm::vec3(0.0, 0.0, 0.0),
+            glm::vec3(1.0, 1.0, 1.0),
+            glm::vec3(0.7, 0.7, 0.7),
+            &_z,
+            &shader_mesh,
+            None,
+        );
+    }
 
     spawn_part(
         &mut world,
         glm::vec3(0., 0., 0.),
         glm::vec3(0.0, 0.0, 0.0),
-        glm::vec3(10.0, 10.0, 10.0),
-        glm::vec3(1., 0., 0.),
+        glm::vec3(1.0, 1.0, 1.0),
+        glm::vec3(0.7, 0.7, 0.7),
         &shader_norm,
         // Some(texture_test),
         None,
@@ -210,9 +227,9 @@ async fn main() {
 
         // ----------------------- ECS Update Systems -----------------------
         // test rotation system
-        for (&_, rotation) in &mut world.rotations {
-            rotation.0 += glm::vec3(0.25, 0.7, 0.33) * delta_time;
-        }
+        // for (&_, rotation) in &mut world.rotations {
+        //     rotation.0 += glm::vec3(0.25, 0.7, 0.33) * delta_time;
+        // }
 
         // ----------------------- Rendering System -----------------------
         unsafe {
@@ -248,6 +265,7 @@ async fn main() {
                     target_shader
                         .set_vec3("uColor", &world.colors.get(&entity).unwrap().0)
                         .unwrap();
+                    target_shader.set_vec3("viewPos", &camera.position).unwrap();
 
                     if let Some(t) = world.textures.get(&entity) {
                         // If there's a texture then apply it (should probably make this so it knows which units to apply, but that will be for later.)

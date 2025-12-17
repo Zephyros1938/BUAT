@@ -2,8 +2,6 @@ use glfw::{Action, Context, Key};
 use log::{debug, info};
 use log4rs;
 use mini_redis::client;
-use mini_redis::{Connection, Frame}; // <-- ADD Frame and Connection
-use tokio::net::TcpStream; // <-- ADD TcpStream
 use nalgebra_glm::{self as glm};
 
 mod ecs;
@@ -13,16 +11,15 @@ mod object;
 mod util;
 
 use crate::{
-    ecs::ecs as ECS,
+    ecs::{ecs as ECS, funcs::spawn_part},
     graphics::{
         camera::{self, Camera3d},
-        shader::{self, Shader},
-        texture::{self, Texture},
+        shader, texture,
         windowing::{self, GameWindow, GameWindowHints},
     },
     input::mousehandler::MouseHandler,
     object::{
-        mesh_loader::{self, MESH_UV, MESH_VERT},
+        mesh_loader::{self, MESH_ALL, MESH_COLOR, MESH_INDICE, MESH_UV, MESH_VERT},
         part::Part,
     },
 };
@@ -42,48 +39,6 @@ async fn preconnect(uri: &String) {
 }
 
 // =============================================================
-// ========================  Functions  ========================
-// =============================================================
-
-fn spawn_part(
-    world: &mut ECS::World,
-    position: glm::Vec3,
-    rotation: glm::Vec3,
-    scale: glm::Vec3,
-    color: glm::Vec3,
-    shader: &Shader,
-    texture: Option<Texture>,
-) -> ECS::Entity {
-    let entity = world.next_entity_id as ECS::Entity;
-    world.next_entity_id += 1;
-
-    let part = match texture {
-        Some(tex) => Part::gen_part_textured(position, rotation, scale, color, tex, shader),
-        None => Part::new(position, rotation, scale, color, shader),
-    };
-
-    world.positions.insert(entity, ECS::Position(position));
-    world.rotations.insert(entity, ECS::Rotation(rotation));
-    world.scales.insert(entity, ECS::Scale(scale));
-    world.colors.insert(entity, ECS::Color(color));
-    world.part_render_data.insert(
-        entity,
-        ECS::PartRenderData {
-            program_id: part.render_data.program_id,
-            vao_id: part.render_data.vao.id,
-            index_count: part.render_data.index_count,
-        },
-    );
-    world.shaders.insert(entity, ECS::Shader(*shader));
-
-    if let Some(tex) = part.texture {
-        world.textures.insert(entity, tex);
-    }
-
-    entity
-}
-
-// =============================================================
 // ======================= Main Program ========================
 // =============================================================
 
@@ -91,8 +46,8 @@ fn spawn_part(
 async fn main() {
     // ------------------------ Logging -------------------------
     log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
-    let _x = mesh_loader::load_vertices_from_obj("assets/test.obj", MESH_VERT | MESH_UV).unwrap();
-    info!("{:?}", _x);
+    let _x = mesh_loader::load_vertices_from_obj("assets/voidstar.obj", MESH_ALL).unwrap();
+    // info!("{:?}", _x);
 
     debug!(
         "{}",
@@ -184,7 +139,7 @@ async fn main() {
         glm::vec3(1., 0., 0.),
         &shader_norm,
         // Some(texture_test),
-        None
+        None,
     );
 
     // =============================================================

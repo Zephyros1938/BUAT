@@ -28,14 +28,7 @@ pub struct Part {
     pub texture: Option<Texture>,
 }
 
-pub trait PartImpl {
-    fn get_model_matrix(&self) -> glm::Mat4 {
-        glm::Mat4::identity()
-    }
-    fn translate(&mut self, translation: glm::Vec3);
-    fn rotate(&mut self, rotation: glm::Vec3);
-    fn scale(&mut self, scale: glm::Vec3);
-}
+
 
 impl Part {
     pub fn new(
@@ -170,45 +163,36 @@ impl Part {
     }
 }
 
-impl PartImpl for Part {
-    fn get_model_matrix(&self) -> glm::Mat4 {
-        let mut model = glm::identity();
-        model = glm::translate(&model, &self.pos);
-        model = glm::rotate(&model, self.rot.x.to_radians(), &glm::vec3(1.0, 0.0, 0.0));
-        model = glm::rotate(&model, self.rot.y.to_radians(), &glm::vec3(0.0, 1.0, 0.0));
-        model = glm::rotate(&model, self.rot.z.to_radians(), &glm::vec3(0.0, 0.0, 1.0));
-        model = glm::scale(&model, &self.size);
-        model
-    }
+// pub trait PartImpl {
+//     fn get_model_matrix(&self) -> glm::Mat4 {
+//         glm::Mat4::identity()
+//     }
+//     fn translate(&mut self, translation: glm::Vec3);
+//     fn rotate(&mut self, rotation: glm::Vec3);
+//     fn scale(&mut self, scale: glm::Vec3);
+// }
 
-    #[allow(dead_code)]
-    fn translate(&mut self, translation: glm::Vec3) {
-        self.pos += translation;
-    }
-    #[allow(dead_code)]
-    fn rotate(&mut self, rotation: glm::Vec3) {
-        self.rot += rotation;
-    }
-    #[allow(dead_code)]
-    fn scale(&mut self, scale: glm::Vec3) {
-        self.size += scale;
-    }
-}
+// impl PartImpl for Part {
+//     fn get_model_matrix(&self) -> glm::Mat4 {
+//         let mut model = glm::identity();
+//         model = glm::translate(&model, &self.pos);
+//         model = glm::rotate(&model, self.rot.x.to_radians(), &glm::vec3(1.0, 0.0, 0.0));
+//         model = glm::rotate(&model, self.rot.y.to_radians(), &glm::vec3(0.0, 1.0, 0.0));
+//         model = glm::rotate(&model, self.rot.z.to_radians(), &glm::vec3(0.0, 0.0, 1.0));
+//         model = glm::scale(&model, &self.size);
+//         model
+//     }
 
-// impl Render for Part {
-//     fn render(&self, shader: &crate::shader::Shader) {
-//         shader.use_program();
-//         let model_matrix = self.get_model_matrix();
-//         shader.set_mat4("model", &model_matrix).unwrap();
-//         self.render_data.vao.bind();
-//         unsafe {
-//             gl::DrawElements(
-//                 gl::TRIANGLES,
-//                 self.render_data.index_count,
-//                 gl::UNSIGNED_INT,
-//                 std::ptr::null(),
-//             );
-//         }
-//         self.render_data.vao.unbind();
+//     #[allow(dead_code)]
+//     fn translate(&mut self, translation: glm::Vec3) {
+//         self.pos += translation;
+//     }
+//     #[allow(dead_code)]
+//     fn rotate(&mut self, rotation: glm::Vec3) {
+//         self.rot += rotation;
+//     }
+//     #[allow(dead_code)]
+//     fn scale(&mut self, scale: glm::Vec3) {
+//         self.size += scale;
 //     }
 // }

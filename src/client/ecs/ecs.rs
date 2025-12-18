@@ -3,7 +3,6 @@ use std::collections::HashMap;
 use nalgebra_glm::{self as glm, Vec3};
 
 use crate::graphics::{shader, texture::Texture};
-pub type Entity = usize;
 
 // Components
 #[derive(Debug, Clone, Copy)]
@@ -33,15 +32,15 @@ pub enum EntityType {
 
 pub struct World {
     pub next_entity_id: usize,
-    pub positions: HashMap<Entity, Position>,
-    pub rotations: HashMap<Entity, Rotation>,
-    pub scales: HashMap<Entity, Scale>,
-    pub velocities: HashMap<Entity, Velocity>,
-    pub colors: HashMap<Entity, Color>,
-    pub part_render_data: HashMap<Entity, PartRenderData>,
-    pub textures: HashMap<Entity, Texture>,
-    pub shaders: HashMap<Entity, Shader>,
-    pub entity_types: HashMap<Entity, EntityType>,
+    pub positions: HashMap<usize, Position>,
+    pub rotations: HashMap<usize, Rotation>,
+    pub scales: HashMap<usize, Scale>,
+    pub velocities: HashMap<usize, Velocity>,
+    pub colors: HashMap<usize, Color>,
+    pub part_render_data: HashMap<usize, PartRenderData>,
+    pub textures: HashMap<usize, Texture>,
+    pub shaders: HashMap<usize, Shader>,
+    pub entity_types: HashMap<usize, EntityType>,
 }
 
 impl World {
@@ -60,13 +59,13 @@ impl World {
         }
     }
 
-    pub fn create_entity(&mut self) -> Entity {
+    pub fn create_entity(&mut self) -> usize {
         let entity_id = self.next_entity_id;
         self.next_entity_id += 1;
         entity_id
     }
 
-    pub fn destroy_entity(&mut self, entity: Entity) {
+    pub fn destroy_entity(&mut self, entity: usize) {
         self.positions.remove(&entity);
         self.rotations.remove(&entity);
         self.scales.remove(&entity);

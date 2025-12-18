@@ -50,7 +50,7 @@ pub fn spawn_part(
     color: glm::Vec3,
     shader: &Shader,
     texture: Option<Texture>,
-) -> ECS::Entity {
+) -> usize {
     let entity = world.create_entity();
 
     let (mut vbo, mut ebo) = (0, 0);
@@ -150,7 +150,7 @@ pub fn spawn_line(
     end: glm::Vec3,
     color: glm::Vec3,
     shader: &Shader,
-) -> ECS::Entity {
+) -> usize {
     let entity = world.create_entity();
 
     let mut vao = 0;

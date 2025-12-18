@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use nalgebra_glm as glm;
+use nalgebra_glm::{self as glm, Vec3};
 
 use crate::graphics::{shader, texture::Texture};
 pub type Entity = usize;
@@ -26,8 +26,14 @@ pub struct PartRenderData {
 pub struct Shader(pub shader::Shader);
 // World
 
+pub enum EntityType {
+    Part,
+    Special,
+    Line(Vec3, Vec3, Vec3), // start, end, color
+}
+
 pub struct World {
-    pub next_entity_id: u64,
+    pub next_entity_id: usize,
     pub positions: HashMap<Entity, Position>,
     pub rotations: HashMap<Entity, Rotation>,
     pub scales: HashMap<Entity, Scale>,
@@ -35,8 +41,11 @@ pub struct World {
     pub colors: HashMap<Entity, Color>,
     pub part_render_data: HashMap<Entity, PartRenderData>,
     pub textures: HashMap<Entity, Texture>,
-    pub shaders: HashMap<Entity, Shader>
+    pub shaders: HashMap<Entity, Shader>,
+    pub entity_types: HashMap<Entity, EntityType>,
 }
+
+
 
 impl World {
     pub fn new() -> Self {
@@ -49,7 +58,26 @@ impl World {
             colors: HashMap::new(),
             part_render_data: HashMap::new(),
             textures: HashMap::new(),
-            shaders: HashMap::new()
+            shaders: HashMap::new(),
+            entity_types: HashMap::new(),
         }
+    }
+
+    pub fn create_entity(&mut self) -> Entity {
+        let entity_id = self.next_entity_id;
+        self.next_entity_id += 1;
+        entity_id
+    }
+
+    pub fn destroy_entity(&mut self, entity: Entity) {
+        self.positions.remove(&entity);
+        self.rotations.remove(&entity);
+        self.scales.remove(&entity);
+        self.velocities.remove(&entity);
+        self.colors.remove(&entity);
+        self.part_render_data.remove(&entity);
+        self.textures.remove(&entity);
+        self.shaders.remove(&entity);
+        self.entity_types.remove(&entity);
     }
 }

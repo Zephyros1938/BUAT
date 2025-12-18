@@ -24,12 +24,11 @@ pub struct PartRenderData {
 }
 #[derive(Debug, Clone, Copy)]
 pub struct Shader(pub shader::Shader);
-// World
 
 pub enum EntityType {
     Part,
     Special,
-    Line(Vec3, Vec3, Vec3), // start, end, color
+    Line(Vec3), // start, end, color
 }
 
 pub struct World {
@@ -44,8 +43,6 @@ pub struct World {
     pub shaders: HashMap<Entity, Shader>,
     pub entity_types: HashMap<Entity, EntityType>,
 }
-
-
 
 impl World {
     pub fn new() -> Self {

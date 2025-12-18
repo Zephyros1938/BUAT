@@ -283,7 +283,7 @@ async fn main() {
                 shader.set_mat4("projection", &projection).unwrap();
 
                 match world.entity_types.get(&entity) {
-                    Some(ECS::EntityType::Line(_, _, color)) => {
+                    Some(ECS::EntityType::Line(color)) => {
                         shader.set_mat4("model", &glm::identity()).unwrap();
                         shader.set_vec3("uColor", color).unwrap();
                         unsafe {

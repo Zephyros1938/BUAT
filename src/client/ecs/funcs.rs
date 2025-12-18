@@ -1,7 +1,6 @@
-use crate::Part;
 use crate::ecs::ecs::{self as ECS, PartRenderData};
 use crate::graphics::shader::{Shader, VertexArrayObject};
-use crate::graphics::texture::{self, Texture};
+use crate::graphics::texture::Texture;
 use crate::object::part::RenderData;
 use crate::object::part::consts::{PART_INDICES_COLOR, PART_VERTICES};
 use nalgebra_glm as glm;
@@ -193,7 +192,7 @@ pub fn spawn_line(
 
     world
         .entity_types
-        .insert(entity, ECS::EntityType::Line(start, end, color));
+        .insert(entity, ECS::EntityType::Line( color));
     world.shaders.insert(entity, ECS::Shader(*shader));
     world.part_render_data.insert(
         entity,

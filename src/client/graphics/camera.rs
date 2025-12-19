@@ -131,47 +131,30 @@ fn get_front(yaw: f32, pitch: f32) -> Vec3 {
 }
 
 pub fn debug_camera_movement(cam: &mut Camera3d, game_window: &GameWindow, delta_time: f32) {
-    let mut direction = nalgebra_glm::vec3(0.0, 0.0, 0.0);
-    let key_states = game_window.key_states;
+    let mut direction = nalgebra_glm::Vec3::new(0.0,0.0,0.0);
 
-    if key_states[Key::W as usize] {
+    if game_window.get_key_pressed(Key::W) {
         direction += cam.front;
     }
-    if key_states[Key::S as usize] {
+    if game_window.get_key_pressed(Key::S) {
         direction -= cam.front;
     }
-    if key_states[Key::A as usize] {
+    if game_window.get_key_pressed(Key::A) {
         direction -= cam.right;
     }
-    if key_states[Key::D as usize] {
+    if game_window.get_key_pressed(Key::D) {
         direction += cam.right;
     }
-    if key_states[Key::Space as usize] {
+    if game_window.get_key_pressed(Key::Space) {
         direction += cam.up;
     }
-    if key_states[Key::LeftShift as usize] {
+    if game_window.get_key_pressed(Key::LeftShift) {
         direction -= cam.up;
-    }
-    if key_states[Key::Up as usize] {
-        cam.process_mouse(0.0, 1.0 * delta_time * 50.0 / cam.mouse_sensitivity * 2.);
-    }
-    if key_states[Key::Down as usize] {
-        cam.process_mouse(
-            0.0,
-            -1.0 * delta_time * 50.0 / cam.mouse_sensitivity * 2.,
-        );
-    }
-    if key_states[Key::Left as usize] {
-        cam.process_mouse(
-            -1.0 * delta_time * 50.0 / cam.mouse_sensitivity * 2.,
-            0.0,
-        );
-    }
-    if key_states[Key::Right as usize] {
-        cam.process_mouse(1.0 * delta_time * 50.0 / cam.mouse_sensitivity * 2., 0.0);
     }
 
     if nalgebra_glm::length(&direction) > 0.0 {
+        direction = direction.normalize(); // prevents faster diagonal movement
         cam.position += direction * cam.move_speed * delta_time;
     }
 }
+

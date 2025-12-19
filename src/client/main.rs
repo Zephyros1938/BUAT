@@ -200,7 +200,8 @@ async fn main() {
                 glfw::WindowEvent::Key(key, _, action, _)
                     if (key as usize) < windowing::KEY_COUNT =>
                 {
-                    game_window.key_states[key as usize] = matches!(action, Action::Press);
+                    game_window.key_states[key as usize] = action != Action::Release;
+
 
                     if key == Key::Escape && action == Action::Press {
                         game_window.win.set_should_close(true);
